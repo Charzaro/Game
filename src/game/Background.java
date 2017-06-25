@@ -58,7 +58,7 @@ public class Background {
 			int x = (int)(Math.random()*width);
 			double randNum = Math.random();
 			float r = (float)(randNum*randNum*(max_size - min_size)+min_size);
-			Bullet b = new Bullet(x, 0, r, 0, size2speed_factor*r, Color.WHITE);
+			Bullet b = new Bullet(x, 0, r, r, size2speed_factor*r, (float)(0), Color.WHITE);
 			for(int j=0; j<stars.length; j++){
 				if(stars[j] == null){
 					stars[j] = b;

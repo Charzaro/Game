@@ -6,7 +6,9 @@
 package JSwing;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Toolkit;
 
 import game.GameArea;
 
@@ -23,8 +25,11 @@ public class MainFrame extends javax.swing.JFrame {
      * Creates new form NewJFrame
      */
     public MainFrame() {
-    	width = 800;
-    	height = 800;
+    	
+    	Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+    	width = (int)screenSize.getWidth();
+    	height = (int)screenSize.getHeight();
+
         initComponents();
         myInitComponents();
     }

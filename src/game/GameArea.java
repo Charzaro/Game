@@ -20,29 +20,40 @@ public class GameArea extends JPanel {
 	private static final int UPDATE_RATE = 30; // Frames per second 
 	private static final float EPSILON_TIME = 1e-3f; // 0.01
 	
+	private static final int BULLET_SPEED = 20;
+	
 	private Background bg;
 	
 	int width;
 	int height;
 	
 	private Player p1;
-	private volatile Bullet[] projectiles;
+	private Player p2;
+	private volatile Bullet[] p1bullets;
+	private volatile Bullet[] p2bullets;
 	
 	private boolean isPaused;
 	
-	private KeyPressHandler keys;
+	private KeyPressHandler p1keys;
+	private KeyPressHandler p2keys;
 	
 	private InputMap inputMap;
 	private ActionMap actionMap;
 	
-	int cooldown;
+	private UI ui;
 
 	public GameArea(int width, int height) {
 		this.width = width;
 		this.height = height;
 		
-		p1 = new Player(400, 400);
-		projectiles = new Bullet[100];
+		Player.setDim(width, height);
+		Bullet.setDim(width, height);
+		
+		p1 = new Player(400, 400, 1);
+		p2 = new Player(200, 200, 2);
+		
+		p1bullets = new Bullet[100];
+		p2bullets = new Bullet[100];
 		
 		// set up box with solid white background
 		bg = new Background(this, width, height);
@@ -51,14 +62,19 @@ public class GameArea extends JPanel {
 		repaint();
 		
 		
-		keys = new KeyPressHandler();
-		this.addKeyListener(keys);
+		p1keys = new KeyPressHandler(1);
+		p1.setKeys(p1keys);
+		this.addKeyListener(p1keys);
+		
+		p2keys = new KeyPressHandler(2);
+		p2.setKeys(p2keys);
+		this.addKeyListener(p2keys);
 		
 		inputMap = getInputMap(JPanel.WHEN_FOCUSED);
 		actionMap = getActionMap();
 		setKeyBindings();
 		
-		cooldown = 0;
+		ui = new UI(width, height);
 		
 		isPaused = true;
 		play();
@@ -68,14 +84,21 @@ public class GameArea extends JPanel {
 		Graphics2D g2 = (Graphics2D) g;
 		// draw BG
 		bg.draw(g2);
+		ui.draw(g2, p1.getHealth(), p2.getHealth());
 		
-		for(Bullet b: projectiles){
+		for(Bullet b: p1bullets){
+			if(b != null){
+				b.draw(g2);
+			}	
+		}
+		for(Bullet b: p2bullets){
 			if(b != null){
 				b.draw(g2);
 			}	
 		}
 		
 		p1.draw(g2, this);
+		p2.draw(g2, this);
 	}
 	
 	// start time
@@ -99,7 +122,9 @@ public class GameArea extends JPanel {
 							timeLeft = 1000L / UPDATE_RATE - timeTaken;
 							
 							try{ // wait for amount of time left in the tick
-								sleep(timeLeft);
+								if(timeLeft > 0){
+									sleep(timeLeft);
+								}
 							}
 							catch(Exception e){
 								e.printStackTrace();
@@ -123,37 +148,70 @@ public class GameArea extends JPanel {
 		
 		public void update(){
 			float timeleft = 1.00f; // 100%
-			p1.setVelocity(keys.getXResult(), keys.getYResult());
-			if(keys.space && cooldown <= 0){
-				fireBullet();
-				cooldown = 5;
+			
+			// update according to keypresses for this frame
+			p1.update();
+			if(p1.playerFire()){
+				fireBullet(p1);
 			}
-			if(cooldown > 0){
-				cooldown--;
+			
+			p2.update();
+			if(p2.playerFire()){
+				fireBullet(p2);
 			}
+			// update bg for this frame
 			bg.update();
+			// update positions for this frame
 			do{
 				// Check if each particle hits the box boundaries (must be done first as it resets collision)
 				float firstCollisionTime = timeleft;
 				p1.reset();
+				p2.reset();
 
 				float p1time;
 				if((p1time = p1.checkBoundaryCollisions(timeleft)) < firstCollisionTime){
 					firstCollisionTime = p1time;
 				}
 				
-				for(Bullet b: projectiles){
+				float temptime;
+				if((temptime = p2.checkBoundaryCollisions(timeleft)) < firstCollisionTime){
+					firstCollisionTime = temptime;
+				}
+				
+				for(Bullet b: p1bullets){
 					if(b == null){
 						break;
 					}
-					b.reset();
-					if(b.checkBoundaryCollisions(timeleft) < 0.1){
-						b.active = false;
+					if(b.active){
+						b.reset();
+						if((temptime = b.checkBoundaryCollisions(timeleft)) < firstCollisionTime){
+							firstCollisionTime = temptime;
+						}
+						p2.intersects(b, timeleft);
+					}
+				}
+				for(Bullet b: p2bullets){
+					if(b == null){
+						break;
+					}
+					if(b.active){
+						b.reset();
+						if((temptime = b.checkBoundaryCollisions(timeleft)) < firstCollisionTime){
+							firstCollisionTime = temptime;
+						}
+						p1.intersects(b, timeleft);
 					}
 				}
 				
 				p1.move(firstCollisionTime);
-				for(Bullet b: projectiles){
+				p2.move(firstCollisionTime);
+				for(Bullet b: p1bullets){
+					if(b == null){
+						break;
+					}
+					b.move(firstCollisionTime);
+				}
+				for(Bullet b: p2bullets){
 					if(b == null){
 						break;
 					}
@@ -168,8 +226,15 @@ public class GameArea extends JPanel {
 			
 		}
 		
-		private synchronized void fireBullet(){
-			Bullet newb = new Bullet(p1.getX(), p1.getY(), 5, 0, -20, Color.RED);
+		private synchronized void fireBullet(Player p){
+			Bullet newb = new Bullet(p.getX(), p.getY(), 5, 10, (p.getVelocity()/2)-BULLET_SPEED, p.getAngle(), Color.RED);
+			Bullet[] projectiles;
+			if(p.id == 1){
+				projectiles = p1bullets;
+			}
+			else{
+				projectiles = p2bullets;
+			}
 			for(int i=0; i<projectiles.length; i++){
 				if(projectiles[i] == null){
 					projectiles[i] = newb;
