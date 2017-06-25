@@ -1,5 +1,6 @@
 package game;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -10,7 +11,7 @@ public class Background {
 	
 	private final static int MAXNUMSTARS = 200;
 	
-	private JPanel panel;
+	private GameArea parent;
 	
 	private BufferedImage bg;
 	
@@ -21,8 +22,8 @@ public class Background {
 	
 	private int numActiveStars;
 	
-	public Background(JPanel panel, int width, int height) {
-		this.panel = panel;
+	public Background(GameArea parent, int width, int height) {
+		this.parent = parent;
 		
 		this.width = width;
 		this.height = height;
@@ -38,13 +39,48 @@ public class Background {
 	}
 	
 	public void draw(Graphics2D g2){
-		g2.drawImage(bg, 0, 0, width, height, panel);
+		g2.drawImage(bg, 0, 0, width, height, parent);
 		
 		for(Bullet b: stars){
 			if(b == null){
 				break;
 			}
 			b.draw(g2);
+		}
+	}
+	
+	public void drawHealthBars(Graphics2D g2){
+		int p1h = parent.p1.getHealth();
+		int p2h = parent.p2.getHealth();
+		
+		g2.setStroke(new BasicStroke(10));
+		
+		if(p1h <= 2){
+			g2.setPaint(Color.RED);
+		}
+		else if(p1h <= 5){
+			g2.setPaint(Color.YELLOW);
+		}
+		else{
+			g2.setPaint(Color.GREEN);
+		}
+		
+		if(p1h > 0){
+			g2.drawLine(20, 20, 20 + (p1h*20), 20);
+		}
+		
+		if(p2h <= 2){
+			g2.setPaint(Color.RED);
+		}
+		else if(p2h <= 5){
+			g2.setPaint(Color.YELLOW);
+		}
+		else{
+			g2.setPaint(Color.GREEN);
+		}
+		
+		if(p2h > 0){
+			g2.drawLine(width - 20, 20, width - (20 + (p2h*20)), 20);
 		}
 	}
 	

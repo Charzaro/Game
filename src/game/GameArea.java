@@ -20,17 +20,13 @@ public class GameArea extends JPanel {
 	private static final int UPDATE_RATE = 30; // Frames per second 
 	private static final float EPSILON_TIME = 1e-3f; // 0.01
 	
-	private static final int BULLET_SPEED = 20;
-	
 	private Background bg;
 	
 	int width;
 	int height;
 	
-	private Player p1;
-	private Player p2;
-	private volatile Bullet[] p1bullets;
-	private volatile Bullet[] p2bullets;
+	public Player p1;
+	public Player p2;
 	
 	private boolean isPaused;
 	
@@ -40,8 +36,6 @@ public class GameArea extends JPanel {
 	private InputMap inputMap;
 	private ActionMap actionMap;
 	
-	private UI ui;
-
 	public GameArea(int width, int height) {
 		this.width = width;
 		this.height = height;
@@ -51,9 +45,6 @@ public class GameArea extends JPanel {
 		
 		p1 = new Player(400, 400, 1);
 		p2 = new Player(200, 200, 2);
-		
-		p1bullets = new Bullet[100];
-		p2bullets = new Bullet[100];
 		
 		// set up box with solid white background
 		bg = new Background(this, width, height);
@@ -74,8 +65,6 @@ public class GameArea extends JPanel {
 		actionMap = getActionMap();
 		setKeyBindings();
 		
-		ui = new UI(width, height);
-		
 		isPaused = true;
 		play();
 	}
@@ -84,21 +73,14 @@ public class GameArea extends JPanel {
 		Graphics2D g2 = (Graphics2D) g;
 		// draw BG
 		bg.draw(g2);
-		ui.draw(g2, p1.getHealth(), p2.getHealth());
 		
-		for(Bullet b: p1bullets){
-			if(b != null){
-				b.draw(g2);
-			}	
-		}
-		for(Bullet b: p2bullets){
-			if(b != null){
-				b.draw(g2);
-			}	
-		}
+		p1.drawBullets(g2);
+		p2.drawBullets(g2);
 		
-		p1.draw(g2, this);
-		p2.draw(g2, this);
+		p1.draw(g2);
+		p2.draw(g2);
+		
+		bg.drawHealthBars(g2);
 	}
 	
 	// start time
@@ -151,14 +133,8 @@ public class GameArea extends JPanel {
 			
 			// update according to keypresses for this frame
 			p1.update();
-			if(p1.playerFire()){
-				fireBullet(p1);
-			}
-			
 			p2.update();
-			if(p2.playerFire()){
-				fireBullet(p2);
-			}
+			
 			// update bg for this frame
 			bg.update();
 			// update positions for this frame
@@ -178,7 +154,7 @@ public class GameArea extends JPanel {
 					firstCollisionTime = temptime;
 				}
 				
-				for(Bullet b: p1bullets){
+				for(Bullet b: p1.getBullets()){
 					if(b == null){
 						break;
 					}
@@ -190,7 +166,7 @@ public class GameArea extends JPanel {
 						p2.intersects(b, timeleft);
 					}
 				}
-				for(Bullet b: p2bullets){
+				for(Bullet b: p2.getBullets()){
 					if(b == null){
 						break;
 					}
@@ -205,18 +181,6 @@ public class GameArea extends JPanel {
 				
 				p1.move(firstCollisionTime);
 				p2.move(firstCollisionTime);
-				for(Bullet b: p1bullets){
-					if(b == null){
-						break;
-					}
-					b.move(firstCollisionTime);
-				}
-				for(Bullet b: p2bullets){
-					if(b == null){
-						break;
-					}
-					b.move(firstCollisionTime);
-				}
 				
 				// update remaining portion of time step to check
 				timeleft -= firstCollisionTime;
@@ -224,28 +188,6 @@ public class GameArea extends JPanel {
 				
 			}while(timeleft > EPSILON_TIME); // until entire time step checked
 			
-		}
-		
-		private synchronized void fireBullet(Player p){
-			Bullet newb = new Bullet(p.getX(), p.getY(), 5, 10, (p.getVelocity()/2)-BULLET_SPEED, p.getAngle(), Color.RED);
-			Bullet[] projectiles;
-			if(p.id == 1){
-				projectiles = p1bullets;
-			}
-			else{
-				projectiles = p2bullets;
-			}
-			for(int i=0; i<projectiles.length; i++){
-				if(projectiles[i] == null){
-					projectiles[i] = newb;
-					return;
-				}
-				else if(!projectiles[i].active){
-					projectiles[i] = newb;
-					return;
-				}
-			}
-			System.out.println("Bullet array is too small.");
 		}
 		
 		private void setKeyBindings(){

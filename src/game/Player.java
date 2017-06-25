@@ -20,6 +20,8 @@ public class Player {
 	private static final int RATE_OF_FIRE = 0;
 	private static final int OVERHEAT_AFTER = 5;
 	
+	private static final int BULLET_SPEED = 20;
+	
 	private static final boolean SHOW_BOXES = false;
 	
 	private static int dimx = 800;
@@ -49,6 +51,8 @@ public class Player {
 	private Collision tempCollision;
 	
 	private BufferedImage image;
+	
+	private volatile Bullet[] bullets;
 
 	public Player(int startx, int starty, int id) {
 		this.id = id;
@@ -64,6 +68,8 @@ public class Player {
 		overheat = 0;
 		
 		health = 10;
+		
+		bullets = new Bullet[100];
 		
 		earliestCollision = new Collision();
 		tempCollision = new Collision();
@@ -126,11 +132,15 @@ public class Player {
 		return health;
 	}
 	
+	public Bullet[] getBullets(){
+		return bullets;
+	}
+	
 	public void setKeys(KeyPressHandler keys){
 		this.keys = keys;
 	}
 	
-	public void draw(Graphics2D g2, JPanel p){
+	public void draw(Graphics2D g2){
 		AffineTransform at = new AffineTransform();
 
 		// Applies transforms in reverse order
@@ -153,6 +163,14 @@ public class Player {
 		//g2.drawImage(image, (int)(xpos-image.getWidth()/2), (int) (ypos-image.getHeight()/2), p);
 		//g2.setPaint(Color.BLUE);
 		//g2.fillOval((int)(xpos-radius), (int) (ypos-radius), 2*radius, 2*radius);
+	}
+	
+	public void drawBullets(Graphics2D g2){
+		for(Bullet b: bullets){
+			if(b != null){
+				b.draw(g2);
+			}	
+		}
 	}
 	
 	public Rectangle getBounds(){
@@ -219,6 +237,22 @@ public class Player {
 			angle -= TURN_SPEED;
 			updateVolComponents();
 		}
+		
+		boolean fire = false;
+		if(keys.space && cooldown <= 0 && overheat < OVERHEAT_AFTER*10){
+			fire = true;
+			cooldown = RATE_OF_FIRE;
+			overheat += 11;
+		}
+		if(cooldown > 0){
+			cooldown--;
+		}
+		if(overheat > 0){
+			overheat--;
+		}
+		if(fire){
+			fireBullet();
+		}
 	}
 	
 	public void move(float time){
@@ -232,22 +266,30 @@ public class Player {
 			xpos += xvol*time;
 			ypos += yvol*time;
 		}
+		
+		for(Bullet b: bullets){
+			if(b == null){
+				break;
+			}
+			b.move(time);
+		}
 	}
 	
-	public boolean playerFire(){
-		boolean fire = false;
-		if(keys.space && cooldown <= 0 && overheat < OVERHEAT_AFTER*10){
-			fire = true;
-			cooldown = RATE_OF_FIRE;
-			overheat += 11;
+	
+	private synchronized void fireBullet(){
+		Bullet newb = new Bullet(xpos, ypos, 5, 10, (velocity/2)-BULLET_SPEED, angle, Color.RED);
+
+		for(int i=0; i<bullets.length; i++){
+			if(bullets[i] == null){
+				bullets[i] = newb;
+				return;
+			}
+			else if(!bullets[i].active){
+				bullets[i] = newb;
+				return;
+			}
 		}
-		if(cooldown > 0){
-			cooldown--;
-		}
-		if(overheat > 0){
-			overheat--;
-		}
-		return fire;
+		System.out.println("Bullet array is too small.");
 	}
 	
 	
