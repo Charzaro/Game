@@ -10,17 +10,19 @@ public class Bullet implements IProjectile {
 	
 	private static final boolean SHOW_BOXES = false;
 	
+	private static final int BULLET_WIDTH = 5;
+	private static final int BULLET_HEIGHT = 20;
+	
 	private static int dimx = 800;
 	private static int dimy = 800;
 	
 	private float xpos;
 	private float ypos;
-	private float xradius;
-	private float yradius;
 	private float xdist;
 	private float ydist;
 	
 	private float angle;
+	private float velocity;
 	private float xvol;
 	private float yvol;
 	private Color color;
@@ -30,16 +32,16 @@ public class Bullet implements IProjectile {
 	
 	public boolean active;
 
-	public Bullet(float startx, float starty, float xradius, float yradius, float velocity, float angle, Color color) {
+	public Bullet(float startx, float starty, float velocity, float angle, Color color) {
 		this.xpos = startx;
 		this.ypos = starty;
-		this.xvol = -velocity*(float)(Math.sin(angle));
-		this.yvol = velocity*(float)(Math.cos(angle));
-		this.xradius = xradius;
-		this.yradius = yradius;
+		this.velocity = velocity;
+		this.xvol = velocity*(float)(Math.sin(angle));
+		this.yvol = -velocity*(float)(Math.cos(angle));
+
 		this.angle = angle;
-		xdist = yradius/2 * (float)-Math.sin(angle);
-		ydist = yradius/2 * (float)Math.cos(angle);
+		xdist = BULLET_HEIGHT/2 * (float)-Math.sin(angle);
+		ydist = BULLET_HEIGHT/2 * (float)Math.cos(angle);
 		this.color = color;
 		
 		earliestCollision = new Collision();
@@ -65,7 +67,20 @@ public class Bullet implements IProjectile {
 	}
 	
 	public float getRadius(){
-		return xradius;
+		return BULLET_WIDTH;
+	}
+	
+	public boolean isActive(){
+		return active;
+	}
+	
+	public void deactivate(){
+		active = false;
+	}
+	
+	private void dissolveVol(){
+		this.xvol = velocity*(float)(Math.sin(angle));
+		this.yvol = -velocity*(float)(Math.cos(angle));
 	}
 	
 	public static void setDim(int x, int y){
@@ -76,7 +91,7 @@ public class Bullet implements IProjectile {
 	public void draw(Graphics2D g2){
 		if(active){
 			g2.setPaint(color);
-			g2.setStroke(new BasicStroke(xradius));
+			g2.setStroke(new BasicStroke(BULLET_WIDTH));
 			g2.drawLine((int)(xpos - xdist), (int)(ypos - ydist), (int)(xpos + xdist), (int)(ypos + ydist));
 
 			if(SHOW_BOXES){
@@ -90,8 +105,8 @@ public class Bullet implements IProjectile {
 	public Rectangle getBounds(){
 		float cos = Math.abs((float)Math.cos(angle));
 		float sin = Math.abs((float)Math.sin(angle));
-		float xd = (xradius * cos) + (yradius * sin);
-		float yd = (xradius * sin) + (yradius * cos);
+		float xd = (BULLET_WIDTH * cos) + (BULLET_HEIGHT * sin);
+		float yd = (BULLET_WIDTH * sin) + (BULLET_HEIGHT * cos);
 		return new Rectangle((int)(xpos - xd/2), (int)(ypos-yd/2), (int)(xd), (int)(yd));
 		//return new Rectangle((int)(xpos-xradius/2), (int)(ypos-yradius/2), (int)(xradius), (int)(yradius));
 	}
@@ -102,7 +117,7 @@ public class Bullet implements IProjectile {
 	}
 	
 	public float checkBoundaryCollisions(float time){
-		Physics.checkBoxCollision(xpos, ypos, xvol, yvol, xradius, yradius, 0, 0, dimx, dimy, time, tempCollision);
+		Physics.checkBoxCollision(xpos, ypos, xvol, yvol, BULLET_WIDTH, BULLET_HEIGHT, 0, 0, dimx, dimy, time, tempCollision);
 		if(tempCollision.t < earliestCollision.t){
 			earliestCollision.copy(tempCollision);
 			return tempCollision.t;
@@ -111,15 +126,18 @@ public class Bullet implements IProjectile {
 	}
 	
 	public void move(float time){
-		if(earliestCollision.t <= time){
-			xpos = earliestCollision.getNewX(xpos, xvol);
-			ypos = earliestCollision.getNewY(ypos, yvol);
-			active = false;
+		if(active){
+			if(earliestCollision.t <= time){
+				xpos = earliestCollision.getNewX(xpos, xvol);
+				ypos = earliestCollision.getNewY(ypos, yvol);
+				active = false;
+			}
+			else{
+				xpos += xvol*time;
+				ypos += yvol*time;
+			}
 		}
-		else{
-			xpos += xvol*time;
-			ypos += yvol*time;
-		}
+		
 	}
 
 }

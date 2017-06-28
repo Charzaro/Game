@@ -8,6 +8,7 @@ package JSwing;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Insets;
 import java.awt.Toolkit;
 
 import game.GameArea;
@@ -18,24 +19,36 @@ import game.GameArea;
  */
 public class MainFrame extends javax.swing.JFrame {
 
-	private int width;
-	private int height;
+	// dimensions of the
+	private Dimension windowDim;
 	
     /**
      * Creates new form NewJFrame
      */
     public MainFrame() {
     	
+    	windowDim = new Dimension();
+    	
+    	// get window dimensions from screen resolution minus the borders and taskbar
     	Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-    	width = (int)screenSize.getWidth();
-    	height = (int)screenSize.getHeight();
+    	Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(getGraphicsConfiguration());
+    	windowDim.width = (int)screenSize.getWidth() - insets.right - insets.left;
+    	windowDim.height = (int)screenSize.getHeight() - insets.bottom;
 
+    	setPreferredSize(windowDim);
+    	pack();
+
+    	// initialize most basic UI elements
         initComponents();
         myInitComponents();
     }
     
     private void myInitComponents(){
-    	gameArea = new GameArea(width, height);
+    	
+    	// get resulting dimensions of content area
+    	Dimension playAreaSize = getContentPane().getSize();
+    	// create game area
+    	gameArea = new GameArea((int)playAreaSize.getWidth(), (int)playAreaSize.getHeight());
     	add(gameArea, BorderLayout.CENTER);   	
     	pack();
     }
@@ -48,20 +61,7 @@ public class MainFrame extends javax.swing.JFrame {
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
-
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        /*
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 400, Short.MAX_VALUE)
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 300, Short.MAX_VALUE)
-        );
-        */
     }// </editor-fold>//GEN-END:initComponents
 
     /**

@@ -1,12 +1,12 @@
 package game;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.util.LinkedList;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -16,43 +16,63 @@ import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 
 public class GameArea extends JPanel {
+
+	// Constants
+	private static final long serialVersionUID = 1L;
 	
-	private static final int UPDATE_RATE = 30; // Frames per second 
+	private static final int UPDATE_RATE = 120; // Frames per second 
 	private static final float EPSILON_TIME = 1e-3f; // 0.01
 	
-	private Background bg;
+	private Background bg; // class handling background and UI
 	
+	// dimensions of game area
 	int width;
 	int height;
 	
+	// Players
 	public Player p1;
 	public Player p2;
 	
+	// true when game is running
 	private boolean isPaused;
 	
+	// handle key inputs for players
 	private KeyPressHandler p1keys;
 	private KeyPressHandler p2keys;
-	
+	// input maps for creating key handlers (for some reason making them makes the handler work)
 	private InputMap inputMap;
 	private ActionMap actionMap;
 	
+	
+	// Constructor
 	public GameArea(int width, int height) {
+		
+		changeFrameRate(); // set frame rate conversions if not 120 fps
+
+		// listener for clicks
+		addMouseListener(new ClickListener());
+		
 		this.width = width;
 		this.height = height;
 		
+		// tell the players and bullets what dimensions to use
 		Player.setDim(width, height);
 		Bullet.setDim(width, height);
+		Missile.setDim(width, height);
+		Animation.setDim(width, height);
 		
-		p1 = new Player(400, 400, 1);
-		p2 = new Player(200, 200, 2);
+		// iniate players at opposite ends of the screen
+		p1 = new Player(40, height/2, 1);
+		p2 = new Player(width-40, height/2, 2);
 		
-		// set up box with solid white background
+		// set up background and UI elements
 		bg = new Background(this, width, height);
 		
+		// set panel size
 		setPreferredSize(new Dimension(width, height));
 		repaint();
 		
-		
+		// Add key press handlers to each player
 		p1keys = new KeyPressHandler(1);
 		p1.setKeys(p1keys);
 		this.addKeyListener(p1keys);
@@ -61,26 +81,46 @@ public class GameArea extends JPanel {
 		p2.setKeys(p2keys);
 		this.addKeyListener(p2keys);
 		
+		// generate input maps so keypress handlers work
 		inputMap = getInputMap(JPanel.WHEN_FOCUSED);
 		actionMap = getActionMap();
 		setKeyBindings();
 		
+		// start with game unpaused
 		isPaused = true;
 		play();
 	}
 	
+	// set conversion factor for compensation for frame rate changes (scales up periodic things when less frames per sec)
+	public void changeFrameRate(){
+		Player.setUR(UPDATE_RATE);
+		Background.setUR(UPDATE_RATE);
+		Animation.setUR(UPDATE_RATE);
+		Ability.setUR(UPDATE_RATE);
+	}
+	
+	// draws game
 	protected void paintComponent(Graphics g) {
 		Graphics2D g2 = (Graphics2D) g;
 		// draw BG
 		bg.draw(g2);
 		
+		// draw bullets
 		p1.drawBullets(g2);
 		p2.drawBullets(g2);
 		
+		// draw players
 		p1.draw(g2);
 		p2.draw(g2);
 		
-		bg.drawHealthBars(g2);
+		// draw UI
+		bg.drawGameUI(g2);
+	}
+	
+	// restarts game from starting state
+	public void resetGame(){
+		p1.reset(40, height/2);
+		p2.reset(width-40, height/2);
 	}
 	
 	// start time
@@ -128,6 +168,7 @@ public class GameArea extends JPanel {
 			isPaused = true; // switching this boolean lets the current time thread terminate
 		}
 		
+		// creates each new frame
 		public void update(){
 			float timeleft = 1.00f; // 100%
 			
@@ -140,45 +181,62 @@ public class GameArea extends JPanel {
 			// update positions for this frame
 			do{
 				// Check if each particle hits the box boundaries (must be done first as it resets collision)
-				float firstCollisionTime = timeleft;
+				float firstCollisionTime = timeleft; // looks for first collision
+				// reset collisions for each player
 				p1.reset();
 				p2.reset();
 
-				float p1time;
-				if((p1time = p1.checkBoundaryCollisions(timeleft)) < firstCollisionTime){
-					firstCollisionTime = p1time;
-				}
-				
+				// check for boundary collisions for players and bullets
 				float temptime;
+				if((temptime = p1.checkBoundaryCollisions(timeleft)) < firstCollisionTime){
+					firstCollisionTime = temptime;
+				}
+
 				if((temptime = p2.checkBoundaryCollisions(timeleft)) < firstCollisionTime){
 					firstCollisionTime = temptime;
 				}
 				
-				for(Bullet b: p1.getBullets()){
-					if(b == null){
+				for(IProjectile b: p1.getBullets()){
+					if(b == null){ // until first empty cell
 						break;
 					}
-					if(b.active){
-						b.reset();
+					if(b.isActive()){
+						b.reset(); // reset collisions
 						if((temptime = b.checkBoundaryCollisions(timeleft)) < firstCollisionTime){
 							firstCollisionTime = temptime;
 						}
+						// check collisions with enemy
 						p2.intersects(b, timeleft);
+						if(b instanceof Missile){
+							System.out.println("HEY");
+							Missile m = (Missile) b;
+							m.homex = p2.getX();
+							m.homey = p2.getY();
+						}
 					}
 				}
-				for(Bullet b: p2.getBullets()){
+				// same as earlier loop
+				for(IProjectile b: p2.getBullets()){
 					if(b == null){
 						break;
 					}
-					if(b.active){
+					if(b.isActive()){
 						b.reset();
 						if((temptime = b.checkBoundaryCollisions(timeleft)) < firstCollisionTime){
 							firstCollisionTime = temptime;
 						}
 						p1.intersects(b, timeleft);
+						if(b instanceof Missile){
+							Missile m = (Missile) b;
+							m.homex = p1.getX();
+							m.homey = p1.getY();
+						}
 					}
 				}
 				
+				p1.intersects(p2, timeleft);
+				
+				// move players to position at earliest collision
 				p1.move(firstCollisionTime);
 				p2.move(firstCollisionTime);
 				
@@ -187,13 +245,63 @@ public class GameArea extends JPanel {
 				//System.out.println(timeleft);
 				
 			}while(timeleft > EPSILON_TIME); // until entire time step checked
+			// check for the end of game and pause if a player has died
+			positionCheck();
+			if(p1.getHealth() == 0){
+				pause();
+			}
+			if(p2.getHealth() == 0){
+				pause();
+			}
 			
 		}
 		
+		private void positionCheck(){
+			// receneter player 1 if outside of bounds
+			if(p1.getX() + p1.getBounds().getWidth()/2 > width){
+				p1.adjust(p1.getX()-1, p1.getY());
+				System.out.println("USED");
+			}
+			else if(p1.getX() - p1.getBounds().getWidth()/2 < 0){
+				p1.adjust(p1.getX()+1, p1.getY());
+				System.out.println("USED");
+			}
+			if(p1.getY() + p1.getBounds().getHeight()/2 > height){
+				p1.adjust(p1.getX(), p1.getY()-1);
+				System.out.println("USED");
+			}
+			else if(p1.getY() - p1.getBounds().getHeight()/2 < 0){
+				p1.adjust(p1.getX(), p1.getY()+1);
+				System.out.println("USED");
+			}
+			
+			// recenter player 2 if out of bounds
+			if(p2.getX() + p2.getBounds().getWidth()/2 > width){
+				p2.adjust(p2.getX()-1, p2.getY());
+				System.out.println("USED");
+			}
+			else if(p2.getX() - p2.getBounds().getWidth()/2 < 0){
+				p2.adjust(p2.getX()+1, p2.getY());
+				System.out.println("USED");
+			}
+			if(p2.getY() + p2.getBounds().getHeight()/2 > height){
+				p2.adjust(p2.getX(), p2.getY()-1);
+				System.out.println("USED");
+			}
+			else if(p2.getY() - p2.getBounds().getHeight()/2 < 0){
+				p2.adjust(p2.getX(), p2.getY()+1);
+				System.out.println("USED");
+			}
+		}
+		
+		// key bindings to make keypresshandler work, binds esc to pause/play
 		private void setKeyBindings(){
 			Action spaceAction = new AbstractAction(){
 				public void actionPerformed(ActionEvent e){
 					if(isPaused){
+						if(p1.getHealth() == 0 || p2.getHealth() == 0){
+							resetGame();
+						}
 						play();
 					}
 					else{
@@ -206,6 +314,22 @@ public class GameArea extends JPanel {
 
 			actionMap.put("spaceAction", spaceAction);
 
+		}
+		
+		// makes mouse clicks pause/play game
+		private class ClickListener extends MouseAdapter{
+			@Override
+			public void mouseReleased(MouseEvent e){
+				if(isPaused){
+					if(p1.getHealth() == 0 || p2.getHealth() == 0){
+						resetGame();
+					}
+					play();
+				}
+				else{
+					pause();
+				}
+			}
 		}
 
 }
