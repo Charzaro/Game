@@ -44,9 +44,9 @@ public class KeyPressHandler extends KeyAdapter {
 			upkey = 38;
 			rightkey = 39;
 			downkey = 40;
-			spacekey = 96; // enter
-			boostkey = 110; // period/delete
-			ability1key = 99; //num 3
+			spacekey = 98; // numpad0
+			boostkey = 99; //num 3
+			ability1key = 110; // period/delete
 			ability2key = 10; // enter
 		}
 		
@@ -57,8 +57,8 @@ public class KeyPressHandler extends KeyAdapter {
 			downkey = 83;
 			spacekey = 86; // space
 			boostkey = 67; // shift
-			ability1key = 66; // b
-			ability2key = 78; // n
+			ability1key = 71; // g
+			ability2key = 70; // f
 		}
 		else{
 			System.out.println("Error: player keybinds not yet set.");
@@ -68,28 +68,32 @@ public class KeyPressHandler extends KeyAdapter {
 	}
 	
 	public void keyPressed(KeyEvent e){
-		if(e.getKeyCode() == leftkey){
+		if(!left && e.getKeyCode() == leftkey){
+			if(leftkey == 65){
+				System.out.println("Working Here");
+			}
 			left = true;
 		}
-		if(e.getKeyCode() == upkey){
+		if(!up && e.getKeyCode() == upkey){
 			up = true;
 		}
-		if(e.getKeyCode() == rightkey){
+		if(!right && e.getKeyCode() == rightkey){
 			right = true;
 		}
-		if(e.getKeyCode() == downkey){
+		if(!down && e.getKeyCode() == downkey){
 			down = true;
 		}
-		if(e.getKeyCode() == spacekey){ 
+		if(!space && e.getKeyCode() == spacekey){ 
 			space = true;
+			System.out.println("HI");
 		}
-		if(e.getKeyCode() == boostkey){ 
+		if(!boost && e.getKeyCode() == boostkey){ 
 			boost = true;
 		}
-		if(e.getKeyCode() == ability1key){ 
+		if(!ability1 && e.getKeyCode() == ability1key){ 
 			ability1 = true;
 		}
-		if(e.getKeyCode() == ability2key){ 
+		if(!ability2 && e.getKeyCode() == ability2key){ 
 			ability2 = true;
 		}
 		if(e.getKeyCode() == 97){ 
@@ -118,7 +122,7 @@ public class KeyPressHandler extends KeyAdapter {
 		//System.out.println("Key Code: " + e.getKeyCode() + " Key char: " + e.getKeyChar());
 	}
 	
-	// redundant key pressing for certainty
+	/* redundant key pressing for certainty
 	public void keyHeld(KeyEvent e){
 		if(e.getKeyCode() == leftkey){
 			left = true;
@@ -134,6 +138,7 @@ public class KeyPressHandler extends KeyAdapter {
 		}
 		if(e.getKeyCode() == spacekey){ 
 			space = true;
+			
 		}
 		if(e.getKeyCode() == boostkey){ 
 			boost = true;
@@ -169,6 +174,7 @@ public class KeyPressHandler extends KeyAdapter {
 		//System.out.println("Test");
 		//System.out.println("Key Code: " + e.getKeyCode() + " Key char: " + e.getKeyChar());
 	}
+	*/
 	
 	public void keyReleased(KeyEvent e){
 		if(e.getKeyCode() == leftkey){
@@ -185,6 +191,7 @@ public class KeyPressHandler extends KeyAdapter {
 		}
 		if(e.getKeyCode() == spacekey){
 			space = false;
+			System.out.println("HI2");
 		}
 		if(e.getKeyCode() == boostkey){ 
 			boost = false;

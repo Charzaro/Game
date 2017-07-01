@@ -4,6 +4,8 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
@@ -73,6 +75,7 @@ public class GameArea extends JPanel {
 		repaint();
 		
 		// Add key press handlers to each player
+		
 		p1keys = new KeyPressHandler(1);
 		p1.setKeys(p1keys);
 		this.addKeyListener(p1keys);
@@ -80,6 +83,12 @@ public class GameArea extends JPanel {
 		p2keys = new KeyPressHandler(2);
 		p2.setKeys(p2keys);
 		this.addKeyListener(p2keys);
+		
+		
+		/*
+		p1.setKeys(new KeyStatus());
+		p2.setKeys(new KeyStatus());
+		*/
 		
 		// generate input maps so keypress handlers work
 		inputMap = getInputMap(JPanel.WHEN_FOCUSED);
@@ -208,7 +217,6 @@ public class GameArea extends JPanel {
 						// check collisions with enemy
 						p2.intersects(b, timeleft);
 						if(b instanceof Missile){
-							System.out.println("HEY");
 							Missile m = (Missile) b;
 							m.homex = p2.getX();
 							m.homey = p2.getY();
@@ -258,45 +266,50 @@ public class GameArea extends JPanel {
 		
 		private void positionCheck(){
 			// receneter player 1 if outside of bounds
-			if(p1.getX() + p1.getBounds().getWidth()/2 > width){
+			if(p1.getX() + p1.getEdges().getWidth()/2 > width){
 				p1.adjust(p1.getX()-1, p1.getY());
 				System.out.println("USED");
 			}
-			else if(p1.getX() - p1.getBounds().getWidth()/2 < 0){
+			else if(p1.getX() - p1.getEdges().getWidth()/2 < 0){
 				p1.adjust(p1.getX()+1, p1.getY());
 				System.out.println("USED");
 			}
-			if(p1.getY() + p1.getBounds().getHeight()/2 > height){
+			if(p1.getY() + p1.getEdges().getHeight()/2 > height){
 				p1.adjust(p1.getX(), p1.getY()-1);
 				System.out.println("USED");
 			}
-			else if(p1.getY() - p1.getBounds().getHeight()/2 < 0){
+			else if(p1.getY() - p1.getEdges().getHeight()/2 < 0){
 				p1.adjust(p1.getX(), p1.getY()+1);
 				System.out.println("USED");
 			}
 			
 			// recenter player 2 if out of bounds
-			if(p2.getX() + p2.getBounds().getWidth()/2 > width){
+			if(p2.getX() + p2.getEdges().getWidth()/2 > width){
 				p2.adjust(p2.getX()-1, p2.getY());
 				System.out.println("USED");
 			}
-			else if(p2.getX() - p2.getBounds().getWidth()/2 < 0){
+			else if(p2.getX() - p2.getEdges().getWidth()/2 < 0){
 				p2.adjust(p2.getX()+1, p2.getY());
 				System.out.println("USED");
 			}
-			if(p2.getY() + p2.getBounds().getHeight()/2 > height){
+			if(p2.getY() + p2.getEdges().getHeight()/2 > height){
 				p2.adjust(p2.getX(), p2.getY()-1);
 				System.out.println("USED");
 			}
-			else if(p2.getY() - p2.getBounds().getHeight()/2 < 0){
+			else if(p2.getY() - p2.getEdges().getHeight()/2 < 0){
 				p2.adjust(p2.getX(), p2.getY()+1);
 				System.out.println("USED");
 			}
 		}
 		
+
+
+
+		
+		
 		// key bindings to make keypresshandler work, binds esc to pause/play
 		private void setKeyBindings(){
-			Action spaceAction = new AbstractAction(){
+			Action escAction = new AbstractAction(){
 				public void actionPerformed(ActionEvent e){
 					if(isPaused){
 						if(p1.getHealth() == 0 || p2.getHealth() == 0){
@@ -310,9 +323,18 @@ public class GameArea extends JPanel {
 				}
 			};
 			
-			inputMap.put(KeyStroke.getKeyStroke("ESCAPE"), "spaceAction");
-
-			actionMap.put("spaceAction", spaceAction);
+			//Action upAction = new AbstractAction(){
+			//	public void actionPerformed(ActionEvent e){
+			//		if(!p1.Keys.up){
+			//			p1.Keys.up = true;
+			//		}
+			//	}
+			//};
+			
+			inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0, true), "escAction");
+			
+			//KeyMapSetter km = new KeyMapSetter();
+			//km.set(inputMap, actionMap, p1, p2);
 
 		}
 		

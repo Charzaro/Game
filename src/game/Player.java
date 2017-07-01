@@ -2,8 +2,11 @@ package game;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -58,6 +61,7 @@ public class Player {
 	
 	// keypress handler
 	private KeyPressHandler keys;
+	public KeyStatus Keys;
 	
 	// counts for firing shots
 	private int cooldown;
@@ -151,15 +155,15 @@ public class Player {
 		int[] ys = {testh, 0, testh};
 		graphics.fillPolygon(xs, ys, 3);
 		
-		invulnImage = new BufferedImage(testw+20, testh+20, BufferedImage.TYPE_INT_ARGB);
+		invulnImage = new BufferedImage(testw, testh+20, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D graphics2 = invulnImage.createGraphics();
 		
 		int[] xs2 = {0, testw/2 , testw};
-		int[] ys2 = {testh, 0+20, testh};
+		int[] ys2 = {testh+20, 0+20, testh+20};
 		graphics2.setPaint(Color.GRAY);
-		graphics2.fillPolygon(xs2, ys2, 3);
-		graphics2.setPaint(color);
 		graphics2.fillPolygon(xs, ys, 3);
+		graphics2.setPaint(color);
+		graphics2.fillPolygon(xs2, ys2, 3);
 		
 		
 		/*
@@ -182,7 +186,6 @@ public class Player {
 	// set frame rate factor
 	public static void setUR(int ur){
 		update_factor = 120/ur;
-		System.out.println(update_factor);
 	}
 	
 	// GETTERS
@@ -237,6 +240,10 @@ public class Player {
 		this.keys = keys;
 	}
 	
+	//public void setkeys(KeyStatus keys){
+		//this.Keys = keys;
+	//}
+	
 	public synchronized void setInvuln(boolean b){
 		invulnerable = b;
 	}
@@ -282,7 +289,7 @@ public class Player {
         // shows hitboxes for dev purposes
         if(SHOW_BOXES){
         	g2.setPaint(Color.BLUE);
-        	g2.draw(getBounds());
+        	g2.drawPolygon(getBounds());
         }
 	}
 	
@@ -329,9 +336,18 @@ public class Player {
 		tempCollision = new Collision();
 	}
 	
+	public Rectangle getEdges(){
+		float cos = Math.abs((float)Math.cos(angle));
+		float sin = Math.abs((float)Math.sin(angle));
+		float xdist = (image.getWidth() * cos *cos) + (image.getHeight() * sin*sin);
+		float ydist = (image.getWidth() * sin*sin) + (image.getHeight() * cos*cos);
+
+		return new Rectangle((int)(xpos - xdist/2), (int)(ypos-ydist/2), (int)(xdist), (int)(ydist));
+	}
+	
 	
 	// gets the hitbox of the player
-	public Rectangle getBounds(){
+	public Polygon getBounds(){
 		
 		/* hitbox is a rectangle that is
 		 * 	image width * cos^2 plus image height * sin^2
@@ -339,11 +355,20 @@ public class Player {
 		 *  image width * sin^2 plus image height * cos^2
 		 */
 		
-		float cos = Math.abs((float)Math.cos(angle));
-		float sin = Math.abs((float)Math.sin(angle));
-		float xdist = (image.getWidth() * cos *cos) + (image.getHeight() * sin*sin);
-		float ydist = (image.getWidth() * sin*sin) + (image.getHeight() * cos*cos);
-		return new Rectangle((int)(xpos - xdist/2), (int)(ypos-ydist/2), (int)(xdist), (int)(ydist));
+		float cos = (float)Math.cos(angle);
+		float sin = (float)Math.sin(angle);
+		float comcos = (float)Math.cos(Math.PI/2 - angle);
+		float comsin = (float)Math.sin(Math.PI/2 - angle);
+		float[] dist1 = new float[] {(image.getHeight()/2)*sin, (image.getHeight()/2)*cos};
+		float[] dist2 = new float[] {(image.getWidth()/2 * comsin), image.getWidth()/2 * comcos};
+
+		
+		int[] xs = {(int)(xpos - dist1[0] - dist2[0]), (int)(xpos + dist1[0]),(int)(xpos - dist1[0] + dist2[0])};
+		int[] ys = {(int)(ypos + dist1[1] - dist2[1]), (int)(ypos - dist1[1]), (int)(ypos + dist1[1] + dist2[1])};
+		
+		return new Polygon(xs, ys, 3);
+		
+		//return new Rectangle((int)(xpos - xdist/2), (int)(ypos-ydist/2), (int)(xdist), (int)(ydist));
 		//return new Rectangle((int)xpos-image.getWidth()/2, (int)ypos-image.getHeight()/2, image.getWidth(), image.getHeight());
 	}
 	
@@ -355,7 +380,7 @@ public class Player {
 	
 	// Check for collision with the boundary box in this frame
 	public float checkBoundaryCollisions(float time){
-		Physics.checkBoxCollision(xpos, ypos, xvol, yvol, getBounds().width/2, getBounds().height/2, 0, 0, dimx, dimy, time, tempCollision);
+		Physics.checkBoxCollision(xpos, ypos, xvol, yvol, getEdges().width/2, getEdges().height/2, 0, 0, dimx, dimy, time, tempCollision);
 		if(tempCollision.t < earliestCollision.t){
 			earliestCollision.copy(tempCollision);
 			return tempCollision.t;
@@ -400,9 +425,21 @@ public class Player {
 	// check if a player collides with a player
 	public void intersects(Player p, float timelimit){
 		// check if boundary boxes intersect
-		if(getBounds().intersects(p.getBounds())){
-			
-			
+		Polygon p1bounds = p.getBounds();
+		Polygon p2bounds = getBounds();
+		boolean hit = false;
+		for(int i=0; i<p1bounds.npoints; i++){
+			if(p2bounds.contains(new Point(p1bounds.xpoints[i], p1bounds.ypoints[i]))){
+				hit = true;
+			}
+		}
+		
+		for(int i=0; i<p2bounds.npoints; i++){
+			if(p1bounds.contains(new Point(p2bounds.xpoints[i], p2bounds.ypoints[i]))){
+				hit = true;
+			}
+		}
+		if(hit){
 			if(!invulnerable && collisionCooldown <= 0){
 				// animation
 				Animation newa = new Animation("hit", xpos, ypos, 2, Color.WHITE);
@@ -453,10 +490,9 @@ public class Player {
 					p.health = 0;
 				}
 				
-				this.setVelocity(-2);
+				p.setVelocity(-2);
 			}
-			
-			
+	
 		}
 	}
 	

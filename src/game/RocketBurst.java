@@ -2,7 +2,7 @@ package game;
 
 public class RocketBurst extends Ability {
 	
-	private static final int COOLDOWN_SEC = 10; // cooldown in seconds
+	private static final int COOLDOWN_SEC = 8; // cooldown in seconds
 
 	public RocketBurst(Player p){
 		super(p);

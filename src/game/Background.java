@@ -73,7 +73,7 @@ public class Background {
 			g2.drawLine(20, 60, 20 + (10*20), 60); // 10 * 20 because 10 max health each unti 20 wide
 		}
 		else if(p.id == 2){
-			g2.drawLine(width - 20, 60, width - (10*20), 60); // 10 * 20 because 10 max health each unti 20 wide
+			g2.drawLine(width - 20, 60, width - 20 - (10*20), 60); // 10 * 20 because 10 max health each unti 20 wide
 		}
 		
 		
@@ -95,7 +95,7 @@ public class Background {
 				g2.drawLine(20, 60, 20 + (ph*20), 60); // 10 * 20 because 10 max health each unti 20 wide
 			}
 			else if(p.id == 2){
-				g2.drawLine(width - 20, 60, width - (ph*20), 60); // 10 * 20 because 10 max health each unti 20 wide
+				g2.drawLine(width - 20, 60, width - 20 -(ph*20), 60); // 10 * 20 because 10 max health each unti 20 wide
 			}
 		}
 		else{
