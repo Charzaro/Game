@@ -21,6 +21,10 @@ public class MainFrame extends javax.swing.JFrame {
 
 	// dimensions of the
 	private Dimension windowDim;
+	private Dimension playAreaSize;
+	
+	private GameArea ga;
+	private MenuPanel mp;
 	
     /**
      * Creates new form NewJFrame
@@ -46,12 +50,43 @@ public class MainFrame extends javax.swing.JFrame {
     private void myInitComponents(){
     	
     	// get resulting dimensions of content area
-    	Dimension playAreaSize = getContentPane().getSize();
+    	playAreaSize = getContentPane().getSize();
     	// create game area
-    	gameArea = new GameArea((int)playAreaSize.getWidth(), (int)playAreaSize.getHeight());
-    	add(gameArea, BorderLayout.CENTER);   	
+    	
+    	ga = new GameArea(this, (int)playAreaSize.getWidth(), (int)playAreaSize.getHeight());
+    	
+    	mp = new MenuPanel(this, (int)playAreaSize.getWidth(), (int)playAreaSize.getHeight());
+    	
+    	add(ga, BorderLayout.CENTER);   	
     	pack();
+    	printRes();
     }
+    
+    public void printRes(){
+    	System.out.println("Game Area;");
+    	System.out.format("%f by %f resulotion.%n", playAreaSize.getWidth(), playAreaSize.getHeight());
+    	
+    	System.out.println("Screen");
+    	System.out.format("%f by %f resulotion.%n", windowDim.getWidth(), windowDim.getHeight());
+    }
+    
+    
+    public void openMenu(){
+    	remove(ga);
+    	add(mp);
+    	mp.requestFocus();
+    	pack();
+    	repaint();
+    }
+    
+    public void openGame(){
+    	remove(mp);
+    	add(ga);
+    	ga.requestFocus();
+    	pack();
+    	repaint();
+    }
+    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -99,8 +134,6 @@ public class MainFrame extends javax.swing.JFrame {
             }
         });
     }
-
-    private GameArea gameArea;
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables
 }

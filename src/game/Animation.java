@@ -17,6 +17,8 @@ public class Animation {
 	private float ypos;
 	private float size;
 	
+	private float angle = 0;
+	
 	private Color color;
 	
 	public boolean active;
@@ -26,6 +28,19 @@ public class Animation {
 		this.xpos = xpos;
 		this.ypos = ypos;
 		this.size = size;
+		
+		this.color = c;
+		
+		active = true;
+		frame = 0;
+	}
+	
+	public Animation(String type, float xpos, float ypos, float size, Color c, float angle){
+		this.type = type;
+		this.xpos = xpos;
+		this.ypos = ypos;
+		this.size = size;
+		this.angle = angle;
 		
 		this.color = c;
 		
@@ -69,7 +84,18 @@ public class Animation {
 				else{
 					active = false;
 				}
-
+				break;
+			case "bullet":
+				if(active){
+					float x = (float) (xpos + frame*update_factor*120*Math.sin(angle));
+					y = (float) (ypos - frame*update_factor*120*Math.cos(angle));
+					if(x < 0 || x > dimx || y < 0 || y > dimy){
+						active = false;
+					}
+					g2.setPaint(color);
+					g2.setStroke(new BasicStroke(size));
+					g2.drawLine((int)xpos, (int)ypos, (int)x, (int)y);
+				}
 			}
 		}
 	}

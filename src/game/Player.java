@@ -20,7 +20,7 @@ public class Player {
 	private static final String p1ImageFilename = "pixel ship2.png";
 	
 	private static final int MAX_VELOCITY = 3;
-	private static final double TURN_SPEED = Math.PI/96;
+	public static final float MAX_TURN_SPEED = (float)Math.PI/96;
 	private static final int RATE_OF_FIRE = 4;
 	private static final int OVERHEAT_MAX = 100;
 	private static final int OVERHEAT_AFTER = 5;
@@ -33,7 +33,7 @@ public class Player {
 	private static final boolean SHOW_BOXES = false;
 	
 	// dimensions of the box containing the player
-	private static int dimx = 800;
+	static int dimx = 800;
 	private static int dimy = 800;
 	
 	// ratio used for converting constants when using different framerates
@@ -56,6 +56,7 @@ public class Player {
 	
 	// velocity total and velocity in x and y planes
 	public float velocity;
+	private float steerSpeed;
 	private float xvol;
 	private float yvol;
 	
@@ -83,6 +84,7 @@ public class Player {
 	private volatile boolean steering_enabled;
 	private volatile boolean invulnerable;
 	private volatile boolean accel_enabled;
+	private boolean reflecting;
 	
 	// all purpose counter
 	protected int duration;
@@ -96,7 +98,7 @@ public class Player {
 	private BufferedImage invulnImage;
 	
 	// bullets shot by this player
-	private volatile IProjectile[] bullets;
+	private volatile Projectile[] bullets;
 	
 	// for developer cheats
 	private boolean cheat = false;
@@ -120,6 +122,7 @@ public class Player {
 		ypos = starty;
 		angle = 0;
 		velocity = 0;
+		steerSpeed = MAX_TURN_SPEED;
 		xvol = 0;
 		yvol = 0;
 		
@@ -131,18 +134,27 @@ public class Player {
 		
 		duration = 0;
 		
-		ability1 = new RocketBurst(this);
-		ability2 = new DashAttack(this);
+		if(id == 1){
+			ability1 = new RailGun(this, (short)1);
+			ability2 = new DashAttack(this, (short)2);
+		}
+		else{
+			ability1 = new RailGun(this, (short)1);
+			ability2 = new Reflect(this, (short)2);
+		}
+		
+		
 		
 		animations = new Animation[200];
 		
 		health = MAX_HEALTH;
 		
 		invulnerable = false;
+		reflecting = false;
 		steering_enabled = true;
 		accel_enabled = true;
 		
-		bullets = new IProjectile[300];
+		bullets = new Projectile[300];
 		
 		earliestCollision = new Collision();
 		tempCollision = new Collision();
@@ -226,12 +238,16 @@ public class Player {
 		return health;
 	}
 	
-	public IProjectile[] getBullets(){
+	public Projectile[] getBullets(){
 		return bullets;
 	}
 	
 	public int[] getCooldowns(){
 		return new int[] {ability1.cooldown, ability2.cooldown};
+	}
+	
+	public KeyPressHandler getKeys(){
+		return keys;
 	}
 	
 	// SETTERS
@@ -247,8 +263,14 @@ public class Player {
 	public synchronized void setInvuln(boolean b){
 		invulnerable = b;
 	}
+	public void setReflect(boolean b){
+		reflecting = b;
+	}
 	public synchronized void setSteering(boolean b){
 		steering_enabled = b;
+	}
+	public synchronized void setSteerSpeed(float as){
+		steerSpeed = as;
 	}
 	public synchronized void setAccel(boolean b){
 		accel_enabled = b;
@@ -263,6 +285,10 @@ public class Player {
 				a.draw(g2);
 			}
         }
+		
+		// draw abilities
+		ability1.draw(g2);
+		ability2.draw(g2);
 		
 		AffineTransform at = new AffineTransform();
 
@@ -295,7 +321,7 @@ public class Player {
 	
 	// draws bullets
 	public void drawBullets(Graphics2D g2){
-		for(IProjectile b: bullets){
+		for(Projectile b: bullets){
 			if(b != null){
 				b.draw(g2);
 			}	
@@ -310,6 +336,7 @@ public class Player {
 		ypos = starty;
 		angle = 0;
 		velocity = 0;
+		steerSpeed = MAX_TURN_SPEED;
 		xvol = 0;
 		yvol = 0;
 		
@@ -324,10 +351,11 @@ public class Player {
 		duration = 0;
 		
 		invulnerable = false;
+		reflecting = false;
 		steering_enabled = true;
 		accel_enabled = true;
 		
-		bullets = new IProjectile[300];
+		bullets = new Projectile[300];
 		
 		ability1.reset();
 		ability2.reset();
@@ -389,37 +417,46 @@ public class Player {
 	}
 	
 	// check if player collides with a bullet
-	public void intersects(IProjectile b, float timelimit){
-		// check if boundary boxes intersect
-		if(getBounds().intersects(b.getBounds())){
-			// deactivate bullet
+	public void intersects(Projectile b, float timelimit){
+		if(!b.isActive()){
+			return;
+		}
+		if(reflecting){
+			float xdist = xpos - b.xpos;
+			float ydist = ypos - b.ypos;
+			float distance = (float)Math.sqrt(xdist*xdist + ydist*ydist);
+			if(distance < 60){
+				addProjectile(b.reflectedCopy(bulletColor));
+				b.deactivate();
+				return;
+			}
+		}
+		if(b.checkHit(this)){
+			if(reflecting){
+				addProjectile(b.reflectedCopy(bulletColor));
+				b.deactivate();
+				return;
+			}
+
 			b.deactivate();
-			
 			if(invulnerable){
 				return;
 			}
-			
+
 			// animation
-			Animation newa = new Animation("hit", xpos, ypos, 2, Color.WHITE);
-			for(int i=0; i<animations.length; i++){
-				if(animations[i] == null){
-					animations[i] = newa;
-					break;
-				}
-				else if(!animations[i].active){
-					animations[i] = newa;
-					break;
-				}
-			}
-			
+			addAnimation(new Animation("hit", xpos, ypos, 2, Color.WHITE));
+
 			// injure player
 			if(health > 0){
-				health--;
+				health-= b.getDamage();
+				System.out.println(b.getDamage());
 			}
 			if(health < 0){
 				health = 0;
 			}
+
 		}
+
 	}
 	
 	// check if a player collides with a player
@@ -442,17 +479,7 @@ public class Player {
 		if(hit){
 			if(!invulnerable && collisionCooldown <= 0){
 				// animation
-				Animation newa = new Animation("hit", xpos, ypos, 2, Color.WHITE);
-				for(int i=0; i<animations.length; i++){
-					if(animations[i] == null){
-						animations[i] = newa;
-						break;
-					}
-					else if(!animations[i].active){
-						animations[i] = newa;
-						break;
-					}
-				}
+				addAnimation(new Animation("hit", xpos, ypos, 2, Color.WHITE));
 				
 				// injure player
 				if(health > 0){
@@ -469,17 +496,7 @@ public class Player {
 			// other player
 			if(!p.invulnerable  && p.collisionCooldown <= 0){
 				// animation
-				Animation newa = new Animation("hit", p.getX(), p.getY(), 2, Color.WHITE);
-				for(int i=0; i<p.animations.length; i++){
-					if(p.animations[i] == null){
-						p.animations[i] = newa;
-						break;
-					}
-					else if(!p.animations[i].active){
-						p.animations[i] = newa;
-						break;
-					}
-				}
+				addAnimation(new Animation("hit", p.getX(), p.getY(), 2, Color.WHITE));
 				
 				// injure player
 				if(p.health > 0){
@@ -546,12 +563,12 @@ public class Player {
 		// TURNING
 		// turn right when right key held
 		if(keys.right && !keys.left && steering_enabled){
-			angle += TURN_SPEED*update_factor;
+			angle += steerSpeed*update_factor;
 			updateVolComponents();
 		}
 		// turn left when left key held
 		else if(!keys.right && keys.left && steering_enabled){
-			angle -= TURN_SPEED*update_factor;
+			angle -= steerSpeed*update_factor;
 			updateVolComponents();
 		}
 		
@@ -587,7 +604,7 @@ public class Player {
 			fire = true;
 		}
 		if(cheat && keys.space && id == 1){
-			fireMissile();
+			fireMissile(angle, 40);
 			fire = false;
 		}
 		
@@ -628,7 +645,7 @@ public class Player {
 		}
 		
 		// update all bullets locations as well
-		for(IProjectile b: bullets){
+		for(Projectile b: bullets){
 			if(b == null){
 				break;
 			}
@@ -644,37 +661,64 @@ public class Player {
 		}
 	}
 	
+	public synchronized void fireHitScan(){
+		// create new bullet
+		// velocity is added to player's velocity
+		Laser newb = new Laser(xpos, ypos, 120, angle, bulletColor);
+		
+		addAnimation(new Animation("bullet", xpos, ypos, 5, bulletColor, angle));
+
+		// iterate through until and empty slot found
+		addProjectile(newb);
+	}
+	
 	public void fireMissile(){
-		fireMissile(angle);
+		fireMissile(angle, BULLET_SPEED/2*update_factor);
+	}
+	
+	public void fireMissile(float angle){
+		fireMissile(angle, BULLET_SPEED/2*update_factor);
+	}
+	
+	public synchronized void fireBullet(float velocity){
+		// create new bullet
+		// velocity is added to player's velocity
+		Bullet newb = new Bullet(xpos, ypos, velocity, angle, bulletColor);
+
+		// iterate through until and empty slot found
+		addProjectile(newb);
 	}
 	
 	// for firing a bullet
-	private synchronized void fireBullet(){
-		// create new bullet
-		// velocity is added to player's velocity
-		Bullet newb = new Bullet(xpos, ypos, (velocity)+BULLET_SPEED*update_factor, angle, bulletColor);
-
-		// iterate through until and empty slot found
-		for(int i=0; i<bullets.length; i++){
-			if(bullets[i] == null){
-				bullets[i] = newb;
-				return;
-			}
-			else if(!bullets[i].isActive()){
-				bullets[i] = newb;
-				return;
-			}
-		}
-		System.out.println("Bullet array is too small.");
+	public synchronized void fireBullet(){
+		fireBullet((this.velocity)+BULLET_SPEED*update_factor);
 	}
 	
 	// for firing a missile
-	public synchronized void fireMissile(float angle){
+	public synchronized void fireMissile(float angle, float velocity){
 		// create new missile
 		// velocity is added to player's velocity
-		Missile newb = new Missile(xpos, ypos, BULLET_SPEED/2*update_factor, angle, bulletColor);
+		Missile newb = new Missile(xpos, ypos, velocity, angle, bulletColor);
 
 		// iterate through until and empty slot found
+		addProjectile(newb);
+		
+	}
+	
+	private void addAnimation(Animation newa){
+		for(int i=0; i<animations.length; i++){
+			if(animations[i] == null){
+				animations[i] = newa;
+				break;
+			}
+			else if(!animations[i].active){
+				animations[i] = newa;
+				break;
+			}
+		}
+	}
+	
+	private void addProjectile(Projectile newb){
 		for(int i=0; i<bullets.length; i++){
 			if(bullets[i] == null){
 				bullets[i] = newb;
@@ -685,7 +729,7 @@ public class Player {
 				return;
 			}
 		}
-		System.out.println("Bullet array is too small.");
+		System.out.println("Projectile array is too small.");
 	}
 	
 	public void adjust(float x, float y){

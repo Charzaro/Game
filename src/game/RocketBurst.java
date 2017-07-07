@@ -1,11 +1,13 @@
 package game;
 
+import java.awt.Graphics2D;
+
 public class RocketBurst extends Ability {
 	
 	private static final int COOLDOWN_SEC = 8; // cooldown in seconds
 
-	public RocketBurst(Player p){
-		super(p);
+	public RocketBurst(Player p, short num){
+		super(p, num);
 	}
 
 	public void use() {
@@ -20,6 +22,10 @@ public class RocketBurst extends Ability {
 			player.fireMissile(3*pi/2);
 			player.fireMissile(7*pi/4);
 		}
+	}
+	
+	public void draw(Graphics2D g2){
+		
 	}
 
 }

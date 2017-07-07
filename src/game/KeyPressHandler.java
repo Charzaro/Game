@@ -70,7 +70,6 @@ public class KeyPressHandler extends KeyAdapter {
 	public void keyPressed(KeyEvent e){
 		if(!left && e.getKeyCode() == leftkey){
 			if(leftkey == 65){
-				System.out.println("Working Here");
 			}
 			left = true;
 		}
@@ -85,7 +84,6 @@ public class KeyPressHandler extends KeyAdapter {
 		}
 		if(!space && e.getKeyCode() == spacekey){ 
 			space = true;
-			System.out.println("HI");
 		}
 		if(!boost && e.getKeyCode() == boostkey){ 
 			boost = true;
@@ -191,7 +189,6 @@ public class KeyPressHandler extends KeyAdapter {
 		}
 		if(e.getKeyCode() == spacekey){
 			space = false;
-			System.out.println("HI2");
 		}
 		if(e.getKeyCode() == boostkey){ 
 			boost = false;

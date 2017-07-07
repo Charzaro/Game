@@ -1,13 +1,15 @@
 package game;
 
+import java.awt.Graphics2D;
+
 public class DashAttack extends Ability {
 	
-	private static final int COOLDOWN_SEC = 2; // cooldown in seconds
+	private static final int COOLDOWN_SEC = 3; // cooldown in seconds
 	
 	private volatile boolean active;
 
-	public DashAttack(Player p) {
-		super(p);
+	public DashAttack(Player p, short num) {
+		super(p, num);
 		active = false;
 	}
 
@@ -16,7 +18,7 @@ public class DashAttack extends Ability {
 		if(cooldown <= 0){
 			Thread t = new Thread(){
 				synchronized public void run(){
-					active = false;
+					active = true;
 					player.setInvuln(true);
 					player.setSteering(false);
 					player.setVelocity(40);
@@ -29,14 +31,19 @@ public class DashAttack extends Ability {
 					player.setSteering(true);
 					player.setVelocity(0);
 					active = false;
-					cooldown = update_rate*COOLDOWN_SEC;
 				}
 			};
 			
 			if(!active){
+				cooldown = update_rate*COOLDOWN_SEC;
 				t.start();
 			}
 		}
+		
+	}
+	
+	
+	public void draw(Graphics2D g2){
 		
 	}
 

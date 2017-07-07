@@ -44,6 +44,12 @@ public class Background {
 	public void draw(Graphics2D g2){
 		g2.drawImage(bg, 0, 0, width, height, parent);
 		
+		if(parent.isPaused){
+			g2.setPaint(Color.GREEN);
+			g2.setFont(new Font("SansSerif", Font.BOLD, 96));
+			g2.drawString("PAUSED", width/2 - 200, height/2 - 100);
+		}
+		
 		for(Animation s: stars){
 			if(s == null){
 				break;
@@ -161,111 +167,6 @@ public class Background {
 	public void drawGameUI(Graphics2D g2){
 		drawPlayerUI(g2, parent.p1);
 		drawPlayerUI(g2, parent.p2);
-		/*
-		int p1h = parent.p1.getHealth();
-		int p2h = parent.p2.getHealth();
-		
-		// Draw Player 1 UI
-		
-		// PLayer 1 Label
-		g2.setPaint(Color.ORANGE);
-		g2.setFont(new Font("SansSerif", Font.BOLD, 24));
-		g2.drawString("Player 1", 20, 40);
-		
-		// Health bar box
-		g2.setPaint(Color.GRAY);
-		g2.setStroke(new BasicStroke(20));
-		g2.drawLine(20, 60, 20 + (10*20), 60);
-		
-		// health bar
-		g2.setStroke(new BasicStroke(10));
-		// get correct color
-		if(p1h <= 2){
-			g2.setPaint(Color.RED);
-		}
-		else if(p1h <= 5){
-			g2.setPaint(Color.YELLOW);
-		}
-		else{
-			g2.setPaint(Color.GREEN);
-		}
-		
-		if(p1h > 0){
-			g2.drawLine(20, 60, 20 + (p1h*20), 60);
-		}
-		else{
-			// announce that player 2 wins if player 1 has no health
-			g2.setPaint(Color.MAGENTA);
-			g2.setFont(new Font("SansSerif", Font.BOLD, 96));
-			g2.drawString("Player 2 WINS", width/2 - 300, height/2 - 20);
-		}
-		
-		// Player 1 boost meter
-		g2.setPaint(Color.CYAN);
-		g2.setStroke(new BasicStroke(5));
-		g2.drawLine(20, 80, 20 + (parent.p1.boostFuel/2), 80);
-		
-		// Ability cooldowns
-		int [] p1Cooldowns = parent.p1.getCooldowns();
-		g2.setFont(new Font("SansSerif", Font.BOLD, 36));
-		// Ability 1
-		if(p1Cooldowns[0] == 0){
-			g2.setPaint(Color.GREEN);
-			g2.drawString(Integer.toString(0), 20, 120);
-		}
-		else{
-			g2.setPaint(Color.WHITE);
-			g2.drawString(Integer.toString(1+(p1Cooldowns[0]/(120/(int)update_factor))), 20, 120);
-		}
-		
-		// Ability 2
-		if(p1Cooldowns[1] == 0){
-			g2.setPaint(Color.GREEN);
-			g2.drawString(Integer.toString(0), 80, 120);
-		}
-		else{
-			g2.setPaint(Color.WHITE);
-			g2.drawString(Integer.toString(1+(p1Cooldowns[1]/(120/(int)update_factor))), 80, 120);
-		}
-
-
-
-		// PLayer 2 UI
-		
-		// PLayer 2 label
-		g2.setPaint(Color.MAGENTA);
-		g2.setFont(new Font("SansSerif", Font.BOLD, 24));
-		g2.drawString("Player 2", width-120, 40);
-		
-		g2.setPaint(Color.GRAY);
-		g2.setStroke(new BasicStroke(20));
-		g2.drawLine(width - 20, 60, width - (20 + (10*20)), 60);
-		
-		g2.setStroke(new BasicStroke(10));
-		
-		if(p2h <= 2){
-			g2.setPaint(Color.RED);
-		}
-		else if(p2h <= 5){
-			g2.setPaint(Color.YELLOW);
-		}
-		else{
-			g2.setPaint(Color.GREEN);
-		}
-		
-		if(p2h > 0){
-			g2.drawLine(width - 20, 60, width - (20 + (p2h*20)), 60);
-		}
-		else{
-			g2.setPaint(Color.ORANGE);
-			g2.setFont(new Font("SansSerif", Font.BOLD, 96));
-			g2.drawString("Player 1 WINS", width/2 - 300, height/2 - 20);
-		}
-		
-		g2.setPaint(Color.CYAN);
-		g2.setStroke(new BasicStroke(5));
-		g2.drawLine(width-20, 80, width-(20 + (parent.p2.boostFuel/2)), 80);
-		*/
 	}
 	
 	private void addStars(){

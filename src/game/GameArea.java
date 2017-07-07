@@ -17,6 +17,9 @@ import javax.swing.InputMap;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 
+import JSwing.MainFrame;
+
+
 public class GameArea extends JPanel {
 
 	// Constants
@@ -24,6 +27,8 @@ public class GameArea extends JPanel {
 	
 	private static final int UPDATE_RATE = 120; // Frames per second 
 	private static final float EPSILON_TIME = 1e-3f; // 0.01
+	
+	private MainFrame parent;
 	
 	private Background bg; // class handling background and UI
 	
@@ -36,7 +41,7 @@ public class GameArea extends JPanel {
 	public Player p2;
 	
 	// true when game is running
-	private boolean isPaused;
+	boolean isPaused;
 	
 	// handle key inputs for players
 	private KeyPressHandler p1keys;
@@ -47,7 +52,8 @@ public class GameArea extends JPanel {
 	
 	
 	// Constructor
-	public GameArea(int width, int height) {
+	public GameArea(MainFrame parent, int width, int height) {
+		this.parent = parent;
 		
 		changeFrameRate(); // set frame rate conversions if not 120 fps
 
@@ -175,6 +181,7 @@ public class GameArea extends JPanel {
 		// pauses time
 		public void pause(){
 			isPaused = true; // switching this boolean lets the current time thread terminate
+			repaint();
 		}
 		
 		// creates each new frame
@@ -205,7 +212,7 @@ public class GameArea extends JPanel {
 					firstCollisionTime = temptime;
 				}
 				
-				for(IProjectile b: p1.getBullets()){
+				for(Projectile b: p1.getBullets()){
 					if(b == null){ // until first empty cell
 						break;
 					}
@@ -224,7 +231,7 @@ public class GameArea extends JPanel {
 					}
 				}
 				// same as earlier loop
-				for(IProjectile b: p2.getBullets()){
+				for(Projectile b: p2.getBullets()){
 					if(b == null){
 						break;
 					}
@@ -268,37 +275,37 @@ public class GameArea extends JPanel {
 			// receneter player 1 if outside of bounds
 			if(p1.getX() + p1.getEdges().getWidth()/2 > width){
 				p1.adjust(p1.getX()-1, p1.getY());
-				System.out.println("USED");
+				//System.out.println("USED");
 			}
 			else if(p1.getX() - p1.getEdges().getWidth()/2 < 0){
 				p1.adjust(p1.getX()+1, p1.getY());
-				System.out.println("USED");
+				//System.out.println("USED");
 			}
 			if(p1.getY() + p1.getEdges().getHeight()/2 > height){
 				p1.adjust(p1.getX(), p1.getY()-1);
-				System.out.println("USED");
+				//System.out.println("USED");
 			}
 			else if(p1.getY() - p1.getEdges().getHeight()/2 < 0){
 				p1.adjust(p1.getX(), p1.getY()+1);
-				System.out.println("USED");
+				//System.out.println("USED");
 			}
 			
 			// recenter player 2 if out of bounds
 			if(p2.getX() + p2.getEdges().getWidth()/2 > width){
 				p2.adjust(p2.getX()-1, p2.getY());
-				System.out.println("USED");
+				//System.out.println("USED");
 			}
 			else if(p2.getX() - p2.getEdges().getWidth()/2 < 0){
 				p2.adjust(p2.getX()+1, p2.getY());
-				System.out.println("USED");
+				//System.out.println("USED");
 			}
 			if(p2.getY() + p2.getEdges().getHeight()/2 > height){
 				p2.adjust(p2.getX(), p2.getY()-1);
-				System.out.println("USED");
+				//System.out.println("USED");
 			}
 			else if(p2.getY() - p2.getEdges().getHeight()/2 < 0){
 				p2.adjust(p2.getX(), p2.getY()+1);
-				System.out.println("USED");
+				//System.out.println("USED");
 			}
 		}
 		
@@ -311,15 +318,10 @@ public class GameArea extends JPanel {
 		private void setKeyBindings(){
 			Action escAction = new AbstractAction(){
 				public void actionPerformed(ActionEvent e){
-					if(isPaused){
-						if(p1.getHealth() == 0 || p2.getHealth() == 0){
-							resetGame();
-						}
-						play();
-					}
-					else{
+					if(!isPaused){
 						pause();
 					}
+					parent.openMenu();
 				}
 			};
 			
@@ -332,6 +334,8 @@ public class GameArea extends JPanel {
 			//};
 			
 			inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0, true), "escAction");
+			
+			actionMap.put("escAction", escAction);
 			
 			//KeyMapSetter km = new KeyMapSetter();
 			//km.set(inputMap, actionMap, p1, p2);
