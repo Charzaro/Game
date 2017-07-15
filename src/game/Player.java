@@ -66,6 +66,9 @@ public class Player {
 	private float xvol;
 	private float yvol;
 	
+	private float knockbackX;
+	private float knockbackY;
+	
 	// keypress handler
 	private KeyPressHandler keys;
 	public KeyStatus Keys;
@@ -135,6 +138,9 @@ public class Player {
 		steerSpeed = MAX_TURN_SPEED;
 		xvol = 0;
 		yvol = 0;
+		
+		knockbackX = 0;
+		knockbackY = 0;
 		
 		cooldown = 0;
 		overheat = 0;
@@ -383,6 +389,9 @@ public class Player {
 		xvol = 0;
 		yvol = 0;
 		
+		knockbackX = 0;
+		knockbackY = 0;
+		
 		cheat = false;
 		
 		cooldown = 0;
@@ -543,7 +552,10 @@ public class Player {
 				}
 				
 				// bounce player back
-				addVelocity(-KNOCKBACK*(float)Math.sin(angle), KNOCKBACK*(float)Math.cos(angle));
+				knockbackX += -KNOCKBACK*(float)Math.sin(angle);
+				knockbackY += KNOCKBACK*(float)Math.cos(angle);
+				setVelocity(0);
+				//addVelocity(-KNOCKBACK*(float)Math.sin(angle), KNOCKBACK*(float)Math.cos(angle));
 				//this.setVelocity(-KNOCKBACK);
 			}
 			
@@ -561,7 +573,10 @@ public class Player {
 					p.health = 0;
 				}
 				
-				p.addVelocity(KNOCKBACK*(float)Math.sin(angle), -KNOCKBACK*(float)Math.cos(angle));
+				p.knockbackX += KNOCKBACK*(float)Math.sin(angle);
+				p.knockbackY += -KNOCKBACK*(float)Math.cos(angle);
+				p.setVelocity(0);
+				//p.addVelocity(KNOCKBACK*(float)Math.sin(angle), -KNOCKBACK*(float)Math.cos(angle));
 				//p.setVelocity(-KNOCKBACK);
 			}
 	
@@ -578,6 +593,21 @@ public class Player {
 	public void update(){
 		
 		// Update velocity
+		
+		if(knockbackX != 0){
+			System.out.println("p1 KnockX: " + knockbackX);
+			knockbackX -= 0.1*Settings.update_factor*knockbackX/Math.abs(knockbackX);
+			if(knockbackX < 0.1*Settings.update_factor && knockbackX > -0.1*Settings.update_factor){
+				knockbackX = 0;
+			}
+		}
+		if(knockbackY != 0){
+			System.out.println("p2 KnockY: " + knockbackY);
+			knockbackY -= 0.1*Settings.update_factor*knockbackY/Math.abs(knockbackY);
+			if(knockbackY < 0.1*Settings.update_factor && knockbackY > -0.1*Settings.update_factor){
+				knockbackY = 0;
+			}
+		}
 		
 		// slow down when not moving
 		if(!(keys.up ^ keys.down) || (velocity > MAX_VELOCITY && (!keys.boost || boostFuel <= 0)) || !accel_enabled){
@@ -693,8 +723,8 @@ public class Player {
 		}
 		// otherwise update location
 		else{
-			xpos += xvol*time;
-			ypos += yvol*time;
+			xpos += xvol*time + knockbackX*time;
+			ypos += yvol*time + knockbackY*time;
 		}
 		
 		// update all bullets locations as well
