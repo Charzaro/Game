@@ -2,96 +2,159 @@ package game;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
+import java.util.HashMap;
 
+import JSwing.ReadWriter;
+/*
+ * KeyPressHandler.java
+ * 
+ * Handles key presses on the keyboard for a given player
+ */
 public class KeyPressHandler extends KeyAdapter {
 	
+	private ReadWriter ioStream = new ReadWriter();
+	
+	private int player;
+	private String filename;
+	
+	// flags for if a key is being held
 	public boolean right;
 	public boolean left;
 	public boolean up;
 	public boolean down;
-	public boolean space;
+	public boolean shoot;
 	public boolean boost;
 	public boolean ability1;
 	public boolean ability2;
 	public boolean cheat;
 	
-	private int rightkey;
-	private int leftkey;
-	private int upkey;
-	private int downkey;
-	private int spacekey;
-	private int boostkey;
-	private int ability1key;
-	private int ability2key;
+	// key codes corresponding to a players key
+	private HashMap<String, Integer> keyMap; // = new HashMap<String, Integer>();
+	
+
 	private boolean c1, c2, c3;
 	
 	public KeyPressHandler(int player){
+		
+		this.player = player;
+		
+		// start all flags as false
 		right = false;
 		left = false;
 		up = false;
 		down = false;
-		space = false;
+		shoot = false;
 		boost = false;
 		ability1= false;
 		ability2 = false;
 		
+		// dev secrets
 		c1 = false;
 		c2 = false;
 		c3 = false;
 		
-		if(player == 1){
-			leftkey = 37;
-			upkey = 38;
-			rightkey = 39;
-			downkey = 40;
-			spacekey = 98; // numpad0
-			boostkey = 99; //num 3
-			ability1key = 110; // period/delete
-			ability2key = 10; // enter
+		if(player == 2){
+			filename = "p2binds.ini";
+		}
+		else{
+			filename = "p1binds.ini";
 		}
 		
-		else if(player == 2){
-			leftkey = 65;
-			upkey = 87;
-			rightkey = 68;
-			downkey = 83;
-			spacekey = 86; // space
-			boostkey = 67; // shift
-			ability1key = 71; // g
-			ability2key = 70; // f
+		try{
+			keyMap = ioStream.readBinds(filename);
+		}
+		catch(Exception e){
+			System.err.println(e.getMessage());
+			System.err.println("Default keybinds used.");
+			setDefaults();
+		}
+	}
+
+	public void setDefaults(){
+		// key bindings for player 1
+		
+		keyMap = new HashMap<String, Integer>();
+		if(player == 2){
+			keyMap.put("left", 37);
+			keyMap.put("up", 38);
+			keyMap.put("right", 39);
+			keyMap.put("down", 40);
+			keyMap.put("shoot", 98);
+			keyMap.put("boost", 99);
+			keyMap.put("ability1", 10);
+			keyMap.put("ability2", 110);
+		}
+
+		// key bindings for player 2
+		else if(player == 1){
+			keyMap.put("left", 65);
+			keyMap.put("up", 87);
+			keyMap.put("right", 68);
+			keyMap.put("down", 83);
+			keyMap.put("shoot", 86);
+			keyMap.put("boost", 67);
+			keyMap.put("ability1", 71);
+			keyMap.put("ability2", 70);
+
 		}
 		else{
 			System.out.println("Error: player keybinds not yet set.");
 		}
+	}
+	
+	public void setKeys(HashMap<String, Integer> newKeys){
+		for(String s: newKeys.keySet()){
+			if(keyMap.containsKey(s)){
+				keyMap.remove(s);
+				keyMap.put(s, newKeys.get(s));
+			}
+			else{
+				System.err.println("Trying to bind a key to an improper action.");
+			}
+		}
 		
+		try{
+			ioStream.writeBinds(keyMap, filename);
+		}
+		catch(IOException e){
+			System.err.println("Could not save keybinds.");
+			System.err.println(e.getMessage());
+		}
 		
 	}
 	
+	public HashMap<String, Integer> getKeys(){
+		return keyMap;
+	}
+	
+	
+	// detects a key press
+	// if a key press corresponds to the players key code, sets flag as true.
+	// only checks a key code if the key is not true already, ie. not already pressed
 	public void keyPressed(KeyEvent e){
-		if(!left && e.getKeyCode() == leftkey){
-			if(leftkey == 65){
-			}
+		if(!left && e.getKeyCode() == keyMap.get("left")){
 			left = true;
 		}
-		if(!up && e.getKeyCode() == upkey){
+		if(!up && e.getKeyCode() == keyMap.get("up")){
 			up = true;
 		}
-		if(!right && e.getKeyCode() == rightkey){
+		if(!right && e.getKeyCode() == keyMap.get("right")){
 			right = true;
 		}
-		if(!down && e.getKeyCode() == downkey){
+		if(!down && e.getKeyCode() == keyMap.get("down")){
 			down = true;
 		}
-		if(!space && e.getKeyCode() == spacekey){ 
-			space = true;
+		if(!shoot && e.getKeyCode() == keyMap.get("shoot")){ 
+			shoot = true;
 		}
-		if(!boost && e.getKeyCode() == boostkey){ 
+		if(!boost && e.getKeyCode() == keyMap.get("boost")){ 
 			boost = true;
 		}
-		if(!ability1 && e.getKeyCode() == ability1key){ 
+		if(!ability1 && e.getKeyCode() == keyMap.get("ability1")){ 
 			ability1 = true;
 		}
-		if(!ability2 && e.getKeyCode() == ability2key){ 
+		if(!ability2 && e.getKeyCode() == keyMap.get("ability2")){ 
 			ability2 = true;
 		}
 		if(e.getKeyCode() == 97){ 
@@ -116,87 +179,35 @@ public class KeyPressHandler extends KeyAdapter {
 			}
 			
 		}
+		// DEV for finding key codes easily
 		//System.out.println("Test");
 		//System.out.println("Key Code: " + e.getKeyCode() + " Key char: " + e.getKeyChar());
 	}
 	
-	/* redundant key pressing for certainty
-	public void keyHeld(KeyEvent e){
-		if(e.getKeyCode() == leftkey){
-			left = true;
-		}
-		if(e.getKeyCode() == upkey){
-			up = true;
-		}
-		if(e.getKeyCode() == rightkey){
-			right = true;
-		}
-		if(e.getKeyCode() == downkey){
-			down = true;
-		}
-		if(e.getKeyCode() == spacekey){ 
-			space = true;
-			
-		}
-		if(e.getKeyCode() == boostkey){ 
-			boost = true;
-		}
-		if(e.getKeyCode() == ability1key){ 
-			ability1 = true;
-		}
-		if(e.getKeyCode() == ability2key){ 
-			ability2 = true;
-		}
-		if(e.getKeyCode() == 97){ 
-			c1 = true;
-		}
-		if(e.getKeyCode() == 101){
-			if(c1){
-				c2 = true;
-			}
-			else{
-				c1 = false;
-			}
-			
-		}
-		if(e.getKeyCode() == 105){
-			if(c1 && c2){
-				cheat = true;
-			}
-			else{
-				c1 = false;
-				c2 = false;
-			}
-			
-		}
-		//System.out.println("Test");
-		//System.out.println("Key Code: " + e.getKeyCode() + " Key char: " + e.getKeyChar());
-	}
-	*/
-	
+	// on a key release, checks if any of the key codes match the released key and sets that flag to false
 	public void keyReleased(KeyEvent e){
-		if(e.getKeyCode() == leftkey){
+		if(e.getKeyCode() == keyMap.get("left")){
 			left = false;
 		}
-		if(e.getKeyCode() == upkey){
+		if(e.getKeyCode() == keyMap.get("up")){
 			up = false;
 		}
-		if(e.getKeyCode() == rightkey){
+		if(e.getKeyCode() == keyMap.get("right")){
 			right = false;
 		}
-		if(e.getKeyCode() == downkey){
+		if(e.getKeyCode() == keyMap.get("down")){
 			down = false;
 		}
-		if(e.getKeyCode() == spacekey){
-			space = false;
+		if(e.getKeyCode() == keyMap.get("shoot")){
+			shoot = false;
 		}
-		if(e.getKeyCode() == boostkey){ 
+		if(e.getKeyCode() == keyMap.get("boost")){ 
 			boost = false;
 		}
-		if(e.getKeyCode() == ability1key){ 
+		if(e.getKeyCode() == keyMap.get("ability1")){ 
 			ability1 = false;
 		}
-		if(e.getKeyCode() == ability2key){ 
+		if(e.getKeyCode() == keyMap.get("ability2")){ 
 			ability2 = false;
 		}
 		//System.out.println("Test");

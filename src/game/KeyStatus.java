@@ -2,7 +2,9 @@ package game;
 
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
-
+/*
+ * Set of flags for a when using INputmap and actionmap for key inputs
+ */
 public class KeyStatus {
 	
 	public boolean right;

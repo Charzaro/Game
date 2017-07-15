@@ -4,6 +4,26 @@ public class Physics {
 
 	static Collision tempC = new Collision();
 	final static float T_EPSILON = 0.005f;
+	
+	public static float getDistance(float x1, float y1, float x2, float y2){
+		float xdist = x1 - x2;
+		float ydist = y1 - y2;
+		return (float)Math.sqrt(xdist*xdist + ydist*ydist);
+	}
+	
+	// angle formed by two points, where point one is the center (point 1 to point 2)
+	public static float findAngle(float x1, float y1, float x2, float y2){
+		float dx = -1*(x2 - x1);
+		float dy = y2 - y1;
+		// goal angle to turn to
+		float angle = (float)Math.atan(dx/dy);
+
+		// adjust for fact that arctan can only return a value from -90 to 90
+		if(dy > 0){
+			angle += Math.PI;
+		}
+		return angle;
+	}
 
 	
 	// check if the particle collides with the bounding box

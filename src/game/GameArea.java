@@ -1,6 +1,7 @@
 package game;
-
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
@@ -9,6 +10,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -18,6 +21,14 @@ import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 
 import JSwing.MainFrame;
+import animation.Animation;
+
+/* GameArea.java
+ * 
+ * Class that contains everything used to play out the game
+ * Creates a displays each frame
+ * 
+ */
 
 
 public class GameArea extends JPanel {
@@ -28,9 +39,10 @@ public class GameArea extends JPanel {
 	private static final int UPDATE_RATE = 120; // Frames per second 
 	private static final float EPSILON_TIME = 1e-3f; // 0.01
 	
+	// parent JFrame
 	private MainFrame parent;
-	
-	private Background bg; // class handling background and UI
+	// class handling background and game UI
+	private Background bg; 
 	
 	// dimensions of game area
 	int width;
@@ -41,7 +53,10 @@ public class GameArea extends JPanel {
 	public Player p2;
 	
 	// true when game is running
-	boolean isPaused;
+	public boolean isPaused;
+	// true when a time thread is running, false when it is safe to start a new one
+	private volatile boolean threadSent = false;
+	private short countdown;
 	
 	// handle key inputs for players
 	private KeyPressHandler p1keys;
@@ -54,8 +69,6 @@ public class GameArea extends JPanel {
 	// Constructor
 	public GameArea(MainFrame parent, int width, int height) {
 		this.parent = parent;
-		
-		changeFrameRate(); // set frame rate conversions if not 120 fps
 
 		// listener for clicks
 		addMouseListener(new ClickListener());
@@ -64,17 +77,14 @@ public class GameArea extends JPanel {
 		this.height = height;
 		
 		// tell the players and bullets what dimensions to use
-		Player.setDim(width, height);
-		Bullet.setDim(width, height);
-		Missile.setDim(width, height);
-		Animation.setDim(width, height);
+		Settings.setDim(width, height);
 		
-		// iniate players at opposite ends of the screen
-		p1 = new Player(40, height/2, 1);
-		p2 = new Player(width-40, height/2, 2);
+		// initiate players at opposite ends of the screen
+		p1 = new Player(40, height/2, 1, this);
+		p2 = new Player(width-40, height/2, 2, this);
 		
 		// set up background and UI elements
-		bg = new Background(this, width, height);
+		bg = new Background(this);
 		
 		// set panel size
 		setPreferredSize(new Dimension(width, height));
@@ -91,7 +101,7 @@ public class GameArea extends JPanel {
 		this.addKeyListener(p2keys);
 		
 		
-		/*
+		/* FOR ALTERNATIVE KEY INPUT METHOD
 		p1.setKeys(new KeyStatus());
 		p2.setKeys(new KeyStatus());
 		*/
@@ -102,16 +112,16 @@ public class GameArea extends JPanel {
 		setKeyBindings();
 		
 		// start with game unpaused
+		bg.startStars();
 		isPaused = true;
 		play();
 	}
 	
-	// set conversion factor for compensation for frame rate changes (scales up periodic things when less frames per sec)
-	public void changeFrameRate(){
-		Player.setUR(UPDATE_RATE);
-		Background.setUR(UPDATE_RATE);
-		Animation.setUR(UPDATE_RATE);
-		Ability.setUR(UPDATE_RATE);
+	public void changeDimensions(int width, int height){
+		this.width = width;
+		this.height = height;
+		
+		Settings.setDim(width, height);
 	}
 	
 	// draws game
@@ -130,6 +140,12 @@ public class GameArea extends JPanel {
 		
 		// draw UI
 		bg.drawGameUI(g2);
+		
+		if(countdown > 0){
+			g2.setFont(new Font("SansSerif", Font.BOLD, 96));
+			g2.setPaint(Color.GREEN);
+			g2.drawString(Integer.toString(countdown), width/2, height/2);
+		}
 	}
 	
 	// restarts game from starting state
@@ -140,13 +156,28 @@ public class GameArea extends JPanel {
 	
 	// start time
 		public void play(){
-			if(isPaused){ // make sure not already playing
-				isPaused = false;
+			isPaused = false;
+			if(!threadSent){ // make sure not already playing
+				threadSent = true;
 				// start game thread
 				Thread time = new Thread(){
 					synchronized public void run(){
+						for(countdown=3; countdown > 0; countdown--){
+							repaint();
+							try{
+								sleep(1000L);
+							}
+							catch(InterruptedException e){
+								e.printStackTrace();
+							}
+							// make sure game wasnt re-paused
+							if(isPaused){
+								threadSent = false;
+								return;
+							}
+						}
+						
 						while(true){
-							
 							long startTime, timeTaken, timeLeft;
 							startTime = System.currentTimeMillis(); // get start time of tick
 							
@@ -167,6 +198,7 @@ public class GameArea extends JPanel {
 								e.printStackTrace();
 							}
 							if(isPaused){ // go turned to false, stop
+								threadSent = false; // thread no longer running
 								break;
 							}
 							
@@ -261,32 +293,34 @@ public class GameArea extends JPanel {
 				
 			}while(timeleft > EPSILON_TIME); // until entire time step checked
 			// check for the end of game and pause if a player has died
-			positionCheck();
 			if(p1.getHealth() == 0){
 				pause();
 			}
 			if(p2.getHealth() == 0){
 				pause();
 			}
+			// safety check to move player inside bounds if plyaer escaped
+			positionCheck();
 			
 		}
 		
 		private void positionCheck(){
 			// receneter player 1 if outside of bounds
+			int adjustSpeed = 2;
 			if(p1.getX() + p1.getEdges().getWidth()/2 > width){
-				p1.adjust(p1.getX()-1, p1.getY());
+				p1.adjust(p1.getX()-adjustSpeed, p1.getY());
 				//System.out.println("USED");
 			}
 			else if(p1.getX() - p1.getEdges().getWidth()/2 < 0){
-				p1.adjust(p1.getX()+1, p1.getY());
+				p1.adjust(p1.getX()+adjustSpeed, p1.getY());
 				//System.out.println("USED");
 			}
 			if(p1.getY() + p1.getEdges().getHeight()/2 > height){
-				p1.adjust(p1.getX(), p1.getY()-1);
+				p1.adjust(p1.getX(), p1.getY()-adjustSpeed);
 				//System.out.println("USED");
 			}
 			else if(p1.getY() - p1.getEdges().getHeight()/2 < 0){
-				p1.adjust(p1.getX(), p1.getY()+1);
+				p1.adjust(p1.getX(), p1.getY()+adjustSpeed);
 				//System.out.println("USED");
 			}
 			
@@ -308,10 +342,6 @@ public class GameArea extends JPanel {
 				//System.out.println("USED");
 			}
 		}
-		
-
-
-
 		
 		
 		// key bindings to make keypresshandler work, binds esc to pause/play
@@ -337,6 +367,7 @@ public class GameArea extends JPanel {
 			
 			actionMap.put("escAction", escAction);
 			
+			// FOR ALTERNATIVE KEY INPUT METHOD
 			//KeyMapSetter km = new KeyMapSetter();
 			//km.set(inputMap, actionMap, p1, p2);
 
@@ -347,6 +378,7 @@ public class GameArea extends JPanel {
 			@Override
 			public void mouseReleased(MouseEvent e){
 				if(isPaused){
+					// reset game on click if game has ended
 					if(p1.getHealth() == 0 || p2.getHealth() == 0){
 						resetGame();
 					}

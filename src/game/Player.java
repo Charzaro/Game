@@ -10,39 +10,45 @@ import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
+import animation.Animation;
+import animation.ExplosionAnimation;
+import animation.Hitmark;
+import animation.HitscanAnimation;
+
 public class Player {
 	
 	// Constants
+	
+	// image file name for player
 	private static final String p1ImageFilename = "pixel ship2.png";
 	
-	private static final int MAX_VELOCITY = 3;
-	public static final float MAX_TURN_SPEED = (float)Math.PI/96;
-	private static final int RATE_OF_FIRE = 4;
-	private static final int OVERHEAT_MAX = 100;
-	private static final int OVERHEAT_AFTER = 5;
-	public static final int MAX_HEALTH = 10;
-	public static final int BOOST_MAX = 30;
-	private static final int FUEL_MAX = 500;
 	
-	private static final int BULLET_SPEED = 5;
+	private static final int MAX_VELOCITY = 3; // max speed
+	public static final float MAX_TURN_SPEED = (float)Math.PI/96; // max turn speed
+	private static final int RATE_OF_FIRE = 4; // rate of fire
+	private static final int OVERHEAT_MAX = 100; // overheat bar
+	private static final int OVERHEAT_AFTER = 5; // how many shots can be fired before overheat
+	public static final int MAX_HEALTH = 10; // player health
+	public static final int BOOST_MAX = 30; // boost bar
+	private static final int FUEL_MAX = 500; // fuel bar
+	private static final int KNOCKBACK = 6; // knockback on collision
 	
-	private static final boolean SHOW_BOXES = false;
+	private static final int BULLET_SPEED = 5; // basic bullet speed
 	
-	// dimensions of the box containing the player
-	static int dimx = 800;
-	private static int dimy = 800;
-	
-	// ratio used for converting constants when using different framerates
-	private static int update_factor = 1;
+	private static final boolean SHOW_BOXES = false; // debug: show hitboxes
 	
 	public int id; // number player
 	// for creating placeholder triangles
 	private int testw = 40;
 	private int testh = 50;
+	
+	// Jpanel containing player
+	private GameArea parent;
 	
 	// colors
 	public Color color;
@@ -68,13 +74,15 @@ public class Player {
 	private int cooldown;
 	private int overheat;
 	private int overheat_wait;
+
+	public int boostFuel; // how much boost fuel is left
+	private int collisionCooldown; // gives collision immunity briefly after a collision, this time that immunitity
 	
-	public int boostFuel;
-	private int collisionCooldown;
-	
+	// abilities chosen for the player
 	private Ability ability1;
 	private Ability ability2;
 	
+	// an array of animations for the player
 	private Animation[] animations;
 	
 	// health count
@@ -105,7 +113,9 @@ public class Player {
 
 	
 	// Constructor
-	public Player(int startx, int starty, int id) {
+	public Player(int startx, int starty, int id, GameArea parent) {
+		
+		this.parent = parent;
 		this.id = id;
 		
 		// set colors based on player number
@@ -134,16 +144,8 @@ public class Player {
 		
 		duration = 0;
 		
-		if(id == 1){
-			ability1 = new RailGun(this, (short)1);
-			ability2 = new DashAttack(this, (short)2);
-		}
-		else{
-			ability1 = new RailGun(this, (short)1);
-			ability2 = new Reflect(this, (short)2);
-		}
-		
-		
+		ability1 = new BurstAttack(this, (short)1);
+		ability2 = new HomingRockets(this, (short)2);
 		
 		animations = new Animation[200];
 		
@@ -167,6 +169,7 @@ public class Player {
 		int[] ys = {testh, 0, testh};
 		graphics.fillPolygon(xs, ys, 3);
 		
+		// create an image for the dash attack
 		invulnImage = new BufferedImage(testw, testh+20, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D graphics2 = invulnImage.createGraphics();
 		
@@ -178,7 +181,7 @@ public class Player {
 		graphics2.fillPolygon(xs2, ys2, 3);
 		
 		
-		/*
+		/* FOR WHEN AN IMAGE IS DRAWN
 		try{
 			image = ImageIO.read(new File(p1ImageFilename));
 			radius = image.getWidth()/2;
@@ -189,16 +192,7 @@ public class Player {
 		*/
 	}
 	
-	// set global dimensions
-	public static void setDim(int x, int y){
-		dimx = x;
-		dimy = y;
-	}
-	
-	// set frame rate factor
-	public static void setUR(int ur){
-		update_factor = 120/ur;
-	}
+
 	
 	// GETTERS
 	
@@ -242,11 +236,20 @@ public class Player {
 		return bullets;
 	}
 	
+	public String[] getAbilityNames(){
+		String[] result = {ability1.getName(), ability2.getName()};
+		return result;
+	}
+	
 	public int[] getCooldowns(){
 		return new int[] {ability1.cooldown, ability2.cooldown};
 	}
 	
-	public KeyPressHandler getKeys(){
+	public HashMap<String, Integer> getKeys(){
+		return keys.getKeys();
+	}
+	
+	public KeyPressHandler getKeyPresses(){
 		return keys;
 	}
 	
@@ -274,6 +277,46 @@ public class Player {
 	}
 	public synchronized void setAccel(boolean b){
 		accel_enabled = b;
+	}
+	
+	public void setAbilities(short abil1, short abil2){
+		switch(abil1){
+		case 0:
+			ability1 = new BurstAttack(this, (short)1);
+			break;
+		case 1:
+			ability1 = new HomingRockets(this, (short)1);
+			break;
+		case 2:
+			ability1 = new RailGun(this, (short)1);
+			break;
+		case 3:
+			ability1 = new DashAttack(this, (short)1);
+			break;
+		case 4:
+			ability1 = new Reflect(this, (short)1);
+			break;
+		}
+
+		switch(abil2){
+		case 0:
+			ability2 = new BurstAttack(this, (short)2);
+			break;
+		case 1:
+			ability2 = new HomingRockets(this, (short)2);
+			break;
+		case 2:
+			ability2 = new RailGun(this, (short)2);
+			break;
+		case 3:
+			ability2 = new DashAttack(this, (short)2);
+			break;
+		case 4:
+			ability2 = new Reflect(this, (short)2);
+			break;
+		}
+		
+	
 	}
 	
 	// draw player
@@ -355,6 +398,7 @@ public class Player {
 		steering_enabled = true;
 		accel_enabled = true;
 		
+		animations = new Animation[200];
 		bullets = new Projectile[300];
 		
 		ability1.reset();
@@ -364,6 +408,7 @@ public class Player {
 		tempCollision = new Collision();
 	}
 	
+	// currently unused, returns a rectangle around the ship
 	public Rectangle getEdges(){
 		float cos = Math.abs((float)Math.cos(angle));
 		float sin = Math.abs((float)Math.sin(angle));
@@ -395,9 +440,6 @@ public class Player {
 		int[] ys = {(int)(ypos + dist1[1] - dist2[1]), (int)(ypos - dist1[1]), (int)(ypos + dist1[1] + dist2[1])};
 		
 		return new Polygon(xs, ys, 3);
-		
-		//return new Rectangle((int)(xpos - xdist/2), (int)(ypos-ydist/2), (int)(xdist), (int)(ydist));
-		//return new Rectangle((int)xpos-image.getWidth()/2, (int)ypos-image.getHeight()/2, image.getWidth(), image.getHeight());
 	}
 	
 	// reset stored collisions
@@ -408,7 +450,7 @@ public class Player {
 	
 	// Check for collision with the boundary box in this frame
 	public float checkBoundaryCollisions(float time){
-		Physics.checkBoxCollision(xpos, ypos, xvol, yvol, getEdges().width/2, getEdges().height/2, 0, 0, dimx, dimy, time, tempCollision);
+		Physics.checkBoxCollision(xpos, ypos, xvol, yvol, getEdges().width/2, getEdges().height/2, 0, 0, Settings.getDimx(), Settings.getDimy(), time, tempCollision);
 		if(tempCollision.t < earliestCollision.t){
 			earliestCollision.copy(tempCollision);
 			return tempCollision.t;
@@ -418,38 +460,40 @@ public class Player {
 	
 	// check if player collides with a bullet
 	public void intersects(Projectile b, float timelimit){
+		// if bullet isnt active, skip
 		if(!b.isActive()){
 			return;
 		}
+		// reflect bullet if currently reflecting and bullet is near player
 		if(reflecting){
-			float xdist = xpos - b.xpos;
-			float ydist = ypos - b.ypos;
-			float distance = (float)Math.sqrt(xdist*xdist + ydist*ydist);
+			float distance = Physics.getDistance(xpos, ypos, b.xpos, b.ypos);
 			if(distance < 60){
 				addProjectile(b.reflectedCopy(bulletColor));
 				b.deactivate();
 				return;
 			}
 		}
+		// check if the bullet has hit the player
 		if(b.checkHit(this)){
+			// reflect if hit (mainly for hitscans that wont be "near" the player but still hit)
 			if(reflecting){
 				addProjectile(b.reflectedCopy(bulletColor));
 				b.deactivate();
 				return;
 			}
-
+			// disable bullet
 			b.deactivate();
+			// end here if player is invulnerable
 			if(invulnerable){
 				return;
 			}
 
-			// animation
-			addAnimation(new Animation("hit", xpos, ypos, 2, Color.WHITE));
+			// hit animation
+			addAnimation(new Hitmark(xpos, ypos, Color.WHITE));
 
 			// injure player
 			if(health > 0){
 				health-= b.getDamage();
-				System.out.println(b.getDamage());
 			}
 			if(health < 0){
 				health = 0;
@@ -465,21 +509,29 @@ public class Player {
 		Polygon p1bounds = p.getBounds();
 		Polygon p2bounds = getBounds();
 		boolean hit = false;
+
+		// check if any point of p1's hitbox is inside of p2's hitbox
 		for(int i=0; i<p1bounds.npoints; i++){
 			if(p2bounds.contains(new Point(p1bounds.xpoints[i], p1bounds.ypoints[i]))){
 				hit = true;
 			}
 		}
-		
+		// check if any point of p2's hitbox is inside of p1's hitbox
 		for(int i=0; i<p2bounds.npoints; i++){
 			if(p1bounds.contains(new Point(p2bounds.xpoints[i], p2bounds.ypoints[i]))){
 				hit = true;
 			}
 		}
+		
+		// if the two players have collided
 		if(hit){
+			float angle = Physics.findAngle(xpos, ypos, p.getX(), p.getY());
+			
+			// P1
+			// if not invincible and have not just been dealth damage from a collision
 			if(!invulnerable && collisionCooldown <= 0){
 				// animation
-				addAnimation(new Animation("hit", xpos, ypos, 2, Color.WHITE));
+				addAnimation(new Hitmark(xpos, ypos, Color.WHITE));
 				
 				// injure player
 				if(health > 0){
@@ -490,13 +542,15 @@ public class Player {
 					health = 0;
 				}
 				
-				this.setVelocity(-2);
+				// bounce player back
+				addVelocity(-KNOCKBACK*(float)Math.sin(angle), KNOCKBACK*(float)Math.cos(angle));
+				//this.setVelocity(-KNOCKBACK);
 			}
 			
-			// other player
+			// other player (same as p1)
 			if(!p.invulnerable  && p.collisionCooldown <= 0){
 				// animation
-				addAnimation(new Animation("hit", p.getX(), p.getY(), 2, Color.WHITE));
+				addAnimation(new Hitmark(p.getX(), p.getY(), Color.WHITE));
 				
 				// injure player
 				if(p.health > 0){
@@ -507,7 +561,8 @@ public class Player {
 					p.health = 0;
 				}
 				
-				p.setVelocity(-2);
+				p.addVelocity(KNOCKBACK*(float)Math.sin(angle), -KNOCKBACK*(float)Math.cos(angle));
+				//p.setVelocity(-KNOCKBACK);
 			}
 	
 		}
@@ -527,33 +582,27 @@ public class Player {
 		// slow down when not moving
 		if(!(keys.up ^ keys.down) || (velocity > MAX_VELOCITY && (!keys.boost || boostFuel <= 0)) || !accel_enabled){
 			if(velocity != 0){
-				velocity -= 0.1*update_factor*velocity/Math.abs(velocity);
+				velocity -= 0.1*Settings.update_factor*velocity/Math.abs(velocity);
 				// stop when very small to stop waving around 0
-				if(velocity < 0.1*update_factor && velocity > -0.1*update_factor){
+				if(velocity < 0.1*Settings.update_factor && velocity > -0.1*Settings.update_factor){
 					velocity = 0;
 				}
 				updateVolComponents();
 			}
-			/*if(xvol != 0){
-				xvol -= 0.1*update_factor*xvol/Math.abs(xvol);
-				yvol -= 0.1*update_factor*yvol/Math.abs(yvol);
-				velocity = (float) Math.sqrt(xvol*xvol + yvol*yvol);
-				
-			}*/
 		}
 		// move forward when forward key is held
-		else if(keys.up && velocity < MAX_VELOCITY*update_factor){
-			velocity += 0.1*update_factor;
+		else if(keys.up && velocity < MAX_VELOCITY*Settings.update_factor){
+			velocity += 0.1*Settings.update_factor;
 			updateVolComponents();
 		}
 		// move backward when forward key is held
-		else if(keys.down && velocity > -MAX_VELOCITY*update_factor/2){
-			velocity -= 0.1*update_factor;
+		else if(keys.down && velocity > -MAX_VELOCITY*Settings.update_factor/1.5){
+			velocity -= 0.1*Settings.update_factor;
 			updateVolComponents();
 		}
 		// move forward to a higher max when boost key is held
-		else if(keys.boost && velocity < 3*MAX_VELOCITY*update_factor && boostFuel > 0){
-			velocity += 0.1*update_factor;
+		else if(keys.boost && velocity < 3*MAX_VELOCITY*Settings.update_factor && boostFuel > 0){
+			velocity += 0.1*Settings.update_factor;
 			updateVolComponents();
 		}
 		// activate cheats
@@ -563,48 +612,50 @@ public class Player {
 		// TURNING
 		// turn right when right key held
 		if(keys.right && !keys.left && steering_enabled){
-			angle += steerSpeed*update_factor;
+			angle += steerSpeed*Settings.update_factor;
 			updateVolComponents();
 		}
 		// turn left when left key held
 		else if(!keys.right && keys.left && steering_enabled){
-			angle -= steerSpeed*update_factor;
+			angle -= steerSpeed*Settings.update_factor;
 			updateVolComponents();
 		}
 		
+		// use up boost fuel
 		if(keys.boost && boostFuel > 0){
-			boostFuel -= 5*update_factor;
+			boostFuel -= 5*Settings.update_factor;
 		}
+		// recharge boost fuel
 		if(boostFuel < FUEL_MAX){
-			boostFuel += 2*update_factor;
+			boostFuel += 2*Settings.update_factor;
 		}
 		
 		// FOR FIRING BULLETS
 		
 		boolean fire = false; // tracks if a bullet is fired this frame
 		// if shoot key held, cooldown is down, and not overheated
-		if(keys.space && cooldown <=0 && overheat < OVERHEAT_MAX){
+		if(keys.shoot && cooldown <=0 && overheat < OVERHEAT_MAX){
 			fire = true; // can fire this frame
 			// reset cooldown
-			cooldown = (RATE_OF_FIRE/update_factor)-1;
+			cooldown = (RATE_OF_FIRE/Settings.update_factor)-1;
 			// add to heat of gun
 			overheat += OVERHEAT_MAX/OVERHEAT_AFTER + (RATE_OF_FIRE - 1);
 		}	
 		// otherwise count down cooldown
 		else{
 			if(cooldown > 0){
-				cooldown-= update_factor;
+				cooldown-= Settings.update_factor;
 			}	
 		}
 		// cool down gun
 		if(overheat > 0){
-			overheat-= update_factor;
+			overheat-= Settings.update_factor;
 		}
-		if(cheat && keys.space && id == 2){
+		if(cheat && keys.shoot && id == 2){
 			fire = true;
 		}
-		if(cheat && keys.space && id == 1){
-			fireMissile(angle, 40);
+		if(cheat && keys.shoot && id == 1){
+			fireMissile(angle);
 			fire = false;
 		}
 		
@@ -613,7 +664,7 @@ public class Player {
 			fireBullet();
 		}
 		
-		// ability
+		// use ability
 		if(keys.ability1){
 			ability1.use();
 		}
@@ -621,11 +672,13 @@ public class Player {
 			ability2.use();
 		}
 		
+		// cooldown abilities
 		ability1.cool();
 		ability2.cool();
 		
+		// cooldown timer for collisions
 		if(collisionCooldown > 0){
-			collisionCooldown -= update_factor;
+			collisionCooldown -= Settings.update_factor;
 		}
 	}
 	
@@ -661,64 +714,81 @@ public class Player {
 		}
 	}
 	
-	public synchronized void fireHitScan(){
+	public void fireHitScan(){
 		// create new bullet
 		// velocity is added to player's velocity
-		Laser newb = new Laser(xpos, ypos, 120, angle, bulletColor);
+		Hitscan newb = new Hitscan(xpos, ypos, 120, angle, bulletColor);
 		
-		addAnimation(new Animation("bullet", xpos, ypos, 5, bulletColor, angle));
+		addAnimation(new HitscanAnimation(xpos, ypos, bulletColor, angle));
 
 		// iterate through until and empty slot found
 		addProjectile(newb);
 	}
 	
+	// fires missile at player's angle and at default speed
 	public void fireMissile(){
-		fireMissile(angle, BULLET_SPEED/2*update_factor);
+		fireMissile(angle);
 	}
-	
-	public void fireMissile(float angle){
-		fireMissile(angle, BULLET_SPEED/2*update_factor);
-	}
-	
-	public synchronized void fireBullet(float velocity){
-		// create new bullet
-		// velocity is added to player's velocity
-		Bullet newb = new Bullet(xpos, ypos, velocity, angle, bulletColor);
 
-		// iterate through until and empty slot found
-		addProjectile(newb);
-	}
-	
-	// for firing a bullet
-	public synchronized void fireBullet(){
-		fireBullet((this.velocity)+BULLET_SPEED*update_factor);
-	}
-	
 	// for firing a missile
-	public synchronized void fireMissile(float angle, float velocity){
+	public void fireMissile(float angle){
 		// create new missile
 		// velocity is added to player's velocity
-		Missile newb = new Missile(xpos, ypos, velocity, angle, bulletColor);
+		Missile newb = new Missile(xpos, ypos, angle, bulletColor, this);
 
-		// iterate through until and empty slot found
+		// add to projectile array
+		addProjectile(newb);
+
+	}
+
+	// fires a bullet at custom velocity and angle
+	public void fireBullet(float velocity, float angle){
+		Bullet newb = new Bullet(xpos, ypos, velocity*Settings.update_factor, angle, bulletColor);
+		
+		addProjectile(newb);
+	}
+	
+	// fires a bullet at custom angle
+	public void fireBullet(float angle){
+		Bullet newb = new Bullet(xpos, ypos, (this.velocity)+BULLET_SPEED*Settings.update_factor, angle, bulletColor);
+		
+		addProjectile(newb);
+	}
+	
+	// for firing a bullet at player's angle and default velocity
+	public void fireBullet(){
+		Bullet newb = new Bullet(xpos, ypos, (this.velocity)+BULLET_SPEED*Settings.update_factor, angle, bulletColor);
+
 		addProjectile(newb);
 		
 	}
 	
-	private void addAnimation(Animation newa){
+	// for firing a bullet at player's angle and default velocity
+	public void fireExplosion(int x, int y){
+		Explosion newb = new Explosion(x, y, 60, 0.5f, bulletColor);
+		addAnimation(new ExplosionAnimation(x, y, 60,0.5f, bulletColor));
+		addProjectile(newb);
+	}
+
+	// adds an animation to the animation array
+	void addAnimation(Animation newa){
+		// iterates through until a deactivated animation or empty slot is found
 		for(int i=0; i<animations.length; i++){
 			if(animations[i] == null){
 				animations[i] = newa;
-				break;
+				return;
 			}
 			else if(!animations[i].active){
 				animations[i] = newa;
-				break;
+				return;
 			}
 		}
+		System.err.println("Not enough room in animations array.");
 	}
 	
+	// adds a projectile to the projectile array
 	private void addProjectile(Projectile newb){
+		// iterates through until a deactivated projectile or empty slot is found
 		for(int i=0; i<bullets.length; i++){
 			if(bullets[i] == null){
 				bullets[i] = newb;
@@ -729,9 +799,10 @@ public class Player {
 				return;
 			}
 		}
-		System.out.println("Projectile array is too small.");
+		System.err.println("Projectile array is too small.");
 	}
 	
+	// changes position
 	public void adjust(float x, float y){
 		this.xpos = x;
 		this.ypos = y;
@@ -743,5 +814,14 @@ public class Player {
 		this.velocity = v;
 		updateVolComponents();
 	}
+	
+	// testing functions, remove later?
+		public void addVelocity(float xvol, float yvol){
+			this.xvol += xvol;
+			this.yvol += yvol;
+
+			this.velocity = (float)Math.sqrt(xvol*xvol + yvol*yvol);
+			this.angle = Physics.findAngle(0, 0, xvol, yvol);
+		}
 
 }

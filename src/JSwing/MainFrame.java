@@ -7,24 +7,28 @@ package JSwing;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Insets;
 import java.awt.Toolkit;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.util.HashMap;
 
 import game.GameArea;
 
-/**
+/** MainFrame.java
  *
- * @author Owner
+ * @author Damon Ball
  */
 public class MainFrame extends javax.swing.JFrame {
 
-	// dimensions of the
+	private static final long serialVersionUID = 1L;
+	// dimensions of the window
 	private Dimension windowDim;
+	// dimensions of the game screen
 	private Dimension playAreaSize;
 	
-	private GameArea ga;
-	private MenuPanel mp;
+	protected GameArea ga;
+	protected MenuPanel mp;
 	
     /**
      * Creates new form NewJFrame
@@ -42,26 +46,52 @@ public class MainFrame extends javax.swing.JFrame {
     	setPreferredSize(windowDim);
     	pack();
 
-    	// initialize most basic UI elements
+    	// initialize UI elements
         initComponents();
         myInitComponents();
+        
+        addComponentListener(new ComponentListener() {
+            public void componentResized(ComponentEvent e) {
+            	resize();
+            }
+
+			@Override
+			public void componentMoved(ComponentEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void componentShown(ComponentEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void componentHidden(ComponentEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+        });
     }
     
     private void myInitComponents(){
     	
     	// get resulting dimensions of content area
     	playAreaSize = getContentPane().getSize();
+    	
     	// create game area
-    	
     	ga = new GameArea(this, (int)playAreaSize.getWidth(), (int)playAreaSize.getHeight());
-    	
+    	// create Menu screens
     	mp = new MenuPanel(this, (int)playAreaSize.getWidth(), (int)playAreaSize.getHeight());
     	
+    	// start with game area active in UI
     	add(ga, BorderLayout.CENTER);   	
     	pack();
     	printRes();
     }
     
+    // prints dimensions
     public void printRes(){
     	System.out.println("Game Area;");
     	System.out.format("%f by %f resulotion.%n", playAreaSize.getWidth(), playAreaSize.getHeight());
@@ -70,20 +100,56 @@ public class MainFrame extends javax.swing.JFrame {
     	System.out.format("%f by %f resulotion.%n", windowDim.getWidth(), windowDim.getHeight());
     }
     
-    
+    // switches UI to menu
     public void openMenu(){
     	remove(ga);
     	add(mp);
-    	mp.requestFocus();
+    	mp.requestFocusInWindow();
     	pack();
     	repaint();
     }
     
+    // switches UI to game
     public void openGame(){
     	remove(mp);
     	add(ga);
-    	ga.requestFocus();
+    	ga.requestFocusInWindow();
     	pack();
+    	repaint();
+    	ga.play();
+    }
+    
+    public void setAbilities(short p1Abil1Chosen, short p1Abil2Chosen, short p2Abil1Chosen, short p2Abil2Chosen){
+    	ga.p1.setAbilities(p1Abil1Chosen, p1Abil2Chosen);
+    	ga.p2.setAbilities(p2Abil1Chosen, p2Abil2Chosen);
+    	ga.resetGame();
+    }
+    
+    public HashMap<String, Integer> getP1Keybinds(){
+    	return ga.p1.getKeys();
+    }
+    
+    public HashMap<String, Integer> getP2Keybinds(){
+    	return ga.p2.getKeys();
+    }
+    
+    public void setKeys(short p, HashMap<String, Integer> newKeys){
+    	if(p == 1){
+    		ga.p1.getKeyPresses().setKeys(newKeys);
+    	}
+    	else if(p == 2){
+    		ga.p2.getKeyPresses().setKeys(newKeys);
+    	}
+    	else{
+    		System.err.println("Player does not exist.");
+    	}
+    }
+    
+    private void resize(){
+    	windowDim = this.getSize();
+    	// get resulting dimensions of content area
+    	playAreaSize = getContentPane().getSize();
+    	ga.changeDimensions((int)(playAreaSize.getWidth()), (int)(playAreaSize.getHeight()));
     	repaint();
     }
     

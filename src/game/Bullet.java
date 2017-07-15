@@ -1,19 +1,22 @@
 package game;
 
-import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
-import java.awt.Stroke;
+/*
+ * Bullet.java
+ * 
+ * A basic bullet projectile
+ */
 
 public class Bullet extends Projectile {
 
 	public Bullet(float startx, float starty, float velocity, float angle, Color color) {
 		super(startx, starty, velocity, angle, color);
+		// bullets are 5 by 20
 		bulletWidth = 5;
 		bulletHeight = 20;
 	}
 	
+	// move according to time slot, a collision deactives the bullet
 	public void move(float time){
 		if(active){
 			if(earliestCollision.t <= time){
@@ -29,6 +32,7 @@ public class Bullet extends Projectile {
 		
 	}
 	
+	// gives a reflected bullet
 	public Projectile reflectedCopy(Color c){
 		return new Bullet(xpos, ypos, velocity, (float)(angle+Math.PI), c);
 	}
