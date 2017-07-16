@@ -637,7 +637,7 @@ public class Player {
 			updateVolComponents();
 		}
 		// activate cheats
-		if(keys.cheat){
+		if(keys.c3){
 			cheat = true;
 		}
 		// TURNING
@@ -701,6 +701,10 @@ public class Player {
 		}
 		if(keys.ability2){
 			ability2.use();
+		}
+		
+		if(keys.cheat){
+			reflecting = true;
 		}
 		
 		// cooldown abilities

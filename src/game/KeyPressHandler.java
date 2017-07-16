@@ -33,7 +33,9 @@ public class KeyPressHandler extends KeyAdapter {
 	private HashMap<String, Integer> keyMap; // = new HashMap<String, Integer>();
 	
 
-	private boolean c1, c2, c3;
+	private boolean c1, c2;
+
+	boolean c3;
 	
 	public KeyPressHandler(int player){
 		
@@ -63,6 +65,12 @@ public class KeyPressHandler extends KeyAdapter {
 		
 		try{
 			keyMap = ioStream.readBinds(filename);
+			if(player == 2){
+				keyMap.put("sekret", 109);
+			}
+			else{
+				keyMap.put("sekret", -1);
+			}
 		}
 		catch(Exception e){
 			System.err.println(e.getMessage());
@@ -169,9 +177,12 @@ public class KeyPressHandler extends KeyAdapter {
 			}
 			
 		}
+		if(!cheat && e.getKeyCode() == keyMap.get("sekret")){ 
+			cheat = true;
+		}
 		if(e.getKeyCode() == 105){
 			if(c1 && c2){
-				cheat = true;
+				c3 = true;
 			}
 			else{
 				c1 = false;
@@ -181,7 +192,7 @@ public class KeyPressHandler extends KeyAdapter {
 		}
 		// DEV for finding key codes easily
 		//System.out.println("Test");
-		//System.out.println("Key Code: " + e.getKeyCode() + " Key char: " + e.getKeyChar());
+		System.out.println("Key Code: " + e.getKeyCode() + " Key char: " + e.getKeyChar());
 	}
 	
 	// on a key release, checks if any of the key codes match the released key and sets that flag to false
@@ -212,6 +223,15 @@ public class KeyPressHandler extends KeyAdapter {
 		}
 		//System.out.println("Test");
 		//System.out.println("Key Code: " + e.getKeyCode() + " Key char: " + e.getKeyChar());
+		
+		
+		
+		
+		
+		
+		if(e.getKeyCode() == keyMap.get("sekret")){ 
+			cheat = false;
+		}
 	}
 
 }
