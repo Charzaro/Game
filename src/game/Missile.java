@@ -106,6 +106,7 @@ public class Missile extends Projectile {
 	public boolean checkHit(Player p){
 		if(p.getBounds().intersects(getBounds())){
 			this.p.addAnimation(new ExplosionAnimation(xpos, ypos, 60, 0.5f, color));
+			p.knockback(-4, Physics.findAngle(xpos, ypos, p.getX(), p.getY()));
 			return true;
 		}
 		return false;

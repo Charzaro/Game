@@ -25,7 +25,7 @@ public class Player {
 	// Constants
 	
 	// image file name for player
-	private static final String p1ImageFilename = "pixel ship2.png";
+	private static final String p1ImageFilename = "ShipDesign1.jpg";
 	
 	
 	private static final int MAX_VELOCITY = 3; // max speed
@@ -190,7 +190,7 @@ public class Player {
 		/* FOR WHEN AN IMAGE IS DRAWN
 		try{
 			image = ImageIO.read(new File(p1ImageFilename));
-			radius = image.getWidth()/2;
+			//radius = image.getWidth()/2;
 		}
 		catch(IOException e){
 			System.out.println("Could not open ship image: " + e);
@@ -552,8 +552,7 @@ public class Player {
 				}
 				
 				// bounce player back
-				knockbackX += -KNOCKBACK*(float)Math.sin(angle);
-				knockbackY += KNOCKBACK*(float)Math.cos(angle);
+				knockback(KNOCKBACK, angle);
 				setVelocity(0);
 				//addVelocity(-KNOCKBACK*(float)Math.sin(angle), KNOCKBACK*(float)Math.cos(angle));
 				//this.setVelocity(-KNOCKBACK);
@@ -573,14 +572,18 @@ public class Player {
 					p.health = 0;
 				}
 				
-				p.knockbackX += KNOCKBACK*(float)Math.sin(angle);
-				p.knockbackY += -KNOCKBACK*(float)Math.cos(angle);
+				p.knockback(-KNOCKBACK, angle);
 				p.setVelocity(0);
 				//p.addVelocity(KNOCKBACK*(float)Math.sin(angle), -KNOCKBACK*(float)Math.cos(angle));
 				//p.setVelocity(-KNOCKBACK);
 			}
 	
 		}
+	}
+	
+	public void knockback(float knockback, float angle){
+		knockbackX += -knockback*(float)Math.sin(angle);
+		knockbackY += knockback*(float)Math.cos(angle);
 	}
 	
 	// dissolve total velocity along x and y axes
@@ -595,14 +598,12 @@ public class Player {
 		// Update velocity
 		
 		if(knockbackX != 0){
-			System.out.println("p1 KnockX: " + knockbackX);
 			knockbackX -= 0.1*Settings.update_factor*knockbackX/Math.abs(knockbackX);
 			if(knockbackX < 0.1*Settings.update_factor && knockbackX > -0.1*Settings.update_factor){
 				knockbackX = 0;
 			}
 		}
 		if(knockbackY != 0){
-			System.out.println("p2 KnockY: " + knockbackY);
 			knockbackY -= 0.1*Settings.update_factor*knockbackY/Math.abs(knockbackY);
 			if(knockbackY < 0.1*Settings.update_factor && knockbackY > -0.1*Settings.update_factor){
 				knockbackY = 0;

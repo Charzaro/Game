@@ -330,6 +330,14 @@ public class MenuPanel extends JPanel {
 			}
 		};
 		
+		CustomButton optionsButton = new CustomButton("Options"){
+			@Override
+			public void mouseReleased(MouseEvent e){
+				swapTo(controlsMenu);
+				mouseOver = false;
+			}
+		};
+		
 		int bHeights = 3 * (controlsButton.getHeight() + BUTTON_GAP) - BUTTON_GAP;
 		mainMenu = new JPanel();
 		mainMenu.setLayout(new BoxLayout(mainMenu, BoxLayout.PAGE_AXIS));

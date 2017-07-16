@@ -2,6 +2,7 @@ package game;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Polygon;
 
 public class Explosion extends Projectile {
 	
@@ -51,11 +52,17 @@ public class Explosion extends Projectile {
 	@Override
 	public boolean checkHit(Player p){
 		if(active){
-			float distance = Physics.getDistance(p.getX(), p.getY(), xpos, ypos);
-			if(distance <= radius){
-				active = false;
-				return true;
+			Polygon poly = p.getBounds();
+			for(int i=0; i<poly.npoints; i++){
+				float distance = Physics.getDistance(poly.xpoints[i], poly.ypoints[i], xpos, ypos);
+				if(distance <= radius){
+
+					active = false;
+					p.knockback(-4, Physics.findAngle(xpos, ypos, p.getX(), p.getY()));
+					return true;
+				}
 			}
+			
 		}
 		return false;
 	}

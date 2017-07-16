@@ -2,6 +2,9 @@ package game;
 
 public class Settings {
 	
+	public static float versionNumber = 1.0f;
+	public static String version = "1.0B";
+	
 	private static int dimx =800;
 	private static int dimy = 800;
 	
