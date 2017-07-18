@@ -1,6 +1,8 @@
-package game;
+package abilities;
 
 import java.awt.Graphics2D;
+
+import game.Player;
 
 /*
  * Ability.java
@@ -25,6 +27,10 @@ public abstract class Ability {
 		if(cooldown > 0){
 			cooldown--;
 		}
+	}
+	
+	public int getCooldown(){
+		return cooldown;
 	}
 	
 	// resets ability to starting state

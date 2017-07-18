@@ -47,12 +47,6 @@ public class Background {
 		// fill black
 		g2.drawImage(bg, 0, 0, Settings.getDimx(), Settings.getDimy(), parent);
 		// draw a big PAUSED label when paused
-		if(parent.isPaused){
-			g2.setPaint(Color.GREEN);
-			g2.setFont(new Font("SansSerif", Font.BOLD, 96));
-			// draw the word Paused above the center of the screen
-			drawWord(g2, "PAUSED", Settings.getDimx()/2, Settings.getDimy()/3);
-		}
 		
 		// draw star animations
 		for(Animation s: stars){
@@ -192,6 +186,13 @@ public class Background {
 			g2.setFont(new Font("SansSerif", Font.BOLD, 96));
 			drawWord(g2, "TIE", Settings.getDimx()/2, Settings.getDimy()/2);
 		}
+		
+		if(parent.isPaused){
+			g2.setPaint(Color.GREEN);
+			g2.setFont(new Font("SansSerif", Font.BOLD, 96));
+			// draw the word Paused above the center of the screen
+			drawWord(g2, "PAUSED", Settings.getDimx()/2, Settings.getDimy()/3);
+		}
 
 	}
 	
@@ -225,7 +226,7 @@ public class Background {
 				}
 			}
 			// if all spots are filled with stars in use, print an error
-			System.out.println("Not enough room for all stars");
+			//System.err.println("Not enough room for all stars");
 		}
 	}
 	
@@ -237,12 +238,13 @@ public class Background {
 	// updates each frame, adding starts and moving stars
 	public void update(){
 		addStars(0);
-
+	}
+	
+	public void move(){
 		for(Animation s: stars){
 			if(s == null){
 				break;
 			}
-			//System.out.println("BulletY: " + b.getY());
 			s.move();
 		}
 	}

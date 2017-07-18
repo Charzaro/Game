@@ -1,11 +1,15 @@
-package game;
+package abilities;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
+import java.awt.geom.Point2D;
+
+import game.Player;
+import game.Settings;
 
 public class RailGun extends Ability {
 
-private static final int COOLDOWN_SEC = 2; // cooldown in seconds
+private static final int COOLDOWN_SEC = 4; //3; // cooldown in seconds
 	
 	private volatile boolean active;
 	private int duration;
@@ -20,10 +24,19 @@ private static final int COOLDOWN_SEC = 2; // cooldown in seconds
 		if(active){
 			g2.setPaint(player.color);
 			g2.setStroke(new BasicStroke(Settings.update_rate/duration/2));
-			g2.drawLine((int)(player.getX()), (int)(player.getY()), (int)(player.getX() + Settings.getDimx()*Math.sin(player.getAngle())), (int)(player.getY()-Settings.getDimx()*Math.cos(player.getAngle())));
+			Point2D point = Settings.map.findClosestObstaclePoint(player.getX(), player.getY(), player.getAngle());
+			g2.drawLine((int)(player.getX()), (int)(player.getY()), (int)(point.getX()), (int)(point.getY()));
+			//g2.drawLine((int)(player.getX()), (int)(player.getY()), (int)(player.getX() + 2*Settings.getDimx()*Math.sin(player.getAngle())), (int)(player.getY()-2*Settings.getDimx()*Math.cos(player.getAngle())));
 			
-			if(duration < Settings.update_rate){
-				player.setSteerSpeed(player.MAX_TURN_SPEED/(1+duration/5));
+			
+		}
+	}
+	
+	@Override
+	public void cool(){
+		if(active){
+			if(duration < 2*Settings.update_rate){
+				player.setSteerSpeed(player.MAX_TURN_SPEED/(1+duration/7));
 				boolean key;
 				if(num == 1){
 					key = player.getKeyPresses().ability1;
@@ -50,6 +63,10 @@ private static final int COOLDOWN_SEC = 2; // cooldown in seconds
 				player.setSteerSpeed(player.MAX_TURN_SPEED);
 			}
 		}
+		else if(cooldown > 0){
+			cooldown --;
+		}
+		
 	}
 
 	@Override

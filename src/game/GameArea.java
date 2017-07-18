@@ -10,6 +10,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -21,7 +22,9 @@ import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 
 import JSwing.MainFrame;
+import JSwing.ReadWriter;
 import animation.Animation;
+import animation.HitscanAnimation;
 
 /* GameArea.java
  * 
@@ -51,6 +54,8 @@ public class GameArea extends JPanel {
 	// Players
 	public Player p1;
 	public Player p2;
+	
+	private Map map;
 	
 	// true when game is running
 	public boolean isPaused;
@@ -83,6 +88,10 @@ public class GameArea extends JPanel {
 		p1 = new Player(40, height/2, 1, this);
 		p2 = new Player(width-40, height/2, 2, this);
 		
+		// Load the map
+		map = new Map("BasicMap");
+		
+		//obstacles = new Obstacle[0];
 		// set up background and UI elements
 		bg = new Background(this);
 		
@@ -137,6 +146,13 @@ public class GameArea extends JPanel {
 		// draw players
 		p1.draw(g2);
 		p2.draw(g2);
+		
+		for(Obstacle o: map.getObstacles()){
+			if(o != null){
+				o.draw(g2);	
+			}
+			
+		}
 		
 		// draw UI
 		bg.drawGameUI(g2);
@@ -224,6 +240,8 @@ public class GameArea extends JPanel {
 			p1.update();
 			p2.update();
 			
+			p1.intersects(p2, timeleft);
+			
 			// update bg for this frame
 			bg.update();
 			// update positions for this frame
@@ -244,6 +262,18 @@ public class GameArea extends JPanel {
 					firstCollisionTime = temptime;
 				}
 				
+				for(Obstacle o: map.getObstacles()){
+					if(o == null){
+						break;
+					}
+					if((temptime = p1.checkObstacleCollision(timeleft, o)) < firstCollisionTime){
+						firstCollisionTime = temptime;
+					}
+					if((temptime = p2.checkObstacleCollision(timeleft, o)) < firstCollisionTime){
+						firstCollisionTime = temptime;
+					}
+				}
+				
 				for(Projectile b: p1.getBullets()){
 					if(b == null){ // until first empty cell
 						break;
@@ -252,6 +282,15 @@ public class GameArea extends JPanel {
 						b.reset(); // reset collisions
 						if((temptime = b.checkBoundaryCollisions(timeleft)) < firstCollisionTime){
 							firstCollisionTime = temptime;
+						}
+						for(Obstacle o: map.getObstacles()){
+							if(o == null){
+								break;
+							}
+							if((temptime = b.checkObstacleCollision(timeleft, o)) < firstCollisionTime){
+								firstCollisionTime = temptime;
+							}
+
 						}
 						// check collisions with enemy
 						p2.intersects(b, timeleft);
@@ -272,6 +311,15 @@ public class GameArea extends JPanel {
 						if((temptime = b.checkBoundaryCollisions(timeleft)) < firstCollisionTime){
 							firstCollisionTime = temptime;
 						}
+						for(Obstacle o: map.getObstacles()){
+							if(o == null){
+								break;
+							}
+							if((temptime = b.checkObstacleCollision(timeleft, o)) < firstCollisionTime){
+								firstCollisionTime = temptime;
+							}
+
+						}
 						p1.intersects(b, timeleft);
 						if(b instanceof Missile){
 							Missile m = (Missile) b;
@@ -281,9 +329,8 @@ public class GameArea extends JPanel {
 					}
 				}
 				
-				p1.intersects(p2, timeleft);
-				
 				// move players to position at earliest collision
+				//System.out.println(firstCollisionTime);
 				p1.move(firstCollisionTime);
 				p2.move(firstCollisionTime);
 				
@@ -293,6 +340,7 @@ public class GameArea extends JPanel {
 				
 			}while(timeleft > EPSILON_TIME); // until entire time step checked
 			// check for the end of game and pause if a player has died
+			bg.move();
 			if(p1.getHealth() == 0){
 				pause();
 			}

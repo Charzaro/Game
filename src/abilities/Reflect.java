@@ -1,8 +1,11 @@
-package game;
+package abilities;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+
+import game.Player;
+import game.Settings;
 
 public class Reflect extends Ability {
 	

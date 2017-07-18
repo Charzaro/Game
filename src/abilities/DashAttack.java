@@ -1,6 +1,9 @@
-package game;
+package abilities;
 
 import java.awt.Graphics2D;
+
+import game.Player;
+import game.Settings;
 
 /*
  * DashAttack.java

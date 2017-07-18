@@ -2,8 +2,8 @@ package game;
 
 public class Collision {
 	float t; // time of the collision
-	float nspeedx; // new speed in x direction
-	float nspeedy; // new speed in y direction
+	boolean xcollide; // new speed in x direction
+	boolean ycollide; // new speed in y direction
 	
 	float T_EPSILON = 0.005f; // small factor to ensure boundaries are not crossed
 
@@ -14,13 +14,15 @@ public class Collision {
 	// start with largest value for t so any collision is earlier
 	public void reset(){
 		t = Float.MAX_VALUE;
+		xcollide = false;
+		ycollide = false;
 	}
 
 	// copy over another collision to this collision
 	public void copy(Collision c2){
 		this.t = c2.t;
-		this.nspeedx = c2.nspeedx;
-		this.nspeedy = c2.nspeedy;
+		this.xcollide = c2.xcollide;
+		this.ycollide = c2.ycollide;
 	}
 	
 	// get the new x position 

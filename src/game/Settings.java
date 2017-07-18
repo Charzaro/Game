@@ -10,10 +10,16 @@ public class Settings {
 	
 	public static int update_rate = 120;
 	public static int update_factor = 120/update_rate;
+	
+	public static Map map = new Map("Empty");
 
 	public static void setDim(int x, int y){
 		dimx = x;
 		dimy = y;
+	}
+	
+	public static void setMap(Map m){
+		map = m;
 	}
 	
 	public static int getDimx(){

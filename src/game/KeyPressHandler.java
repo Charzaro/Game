@@ -192,7 +192,7 @@ public class KeyPressHandler extends KeyAdapter {
 		}
 		// DEV for finding key codes easily
 		//System.out.println("Test");
-		System.out.println("Key Code: " + e.getKeyCode() + " Key char: " + e.getKeyChar());
+		//System.out.println("Key Code: " + e.getKeyCode() + " Key char: " + e.getKeyChar());
 	}
 	
 	// on a key release, checks if any of the key codes match the released key and sets that flag to false

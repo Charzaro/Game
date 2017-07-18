@@ -15,6 +15,12 @@ import java.util.HashMap;
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
+import abilities.Ability;
+import abilities.BurstAttack;
+import abilities.DashAttack;
+import abilities.HomingRockets;
+import abilities.RailGun;
+import abilities.Reflect;
 import animation.Animation;
 import animation.ExplosionAnimation;
 import animation.Hitmark;
@@ -65,6 +71,8 @@ public class Player {
 	private float steerSpeed;
 	private float xvol;
 	private float yvol;
+	
+	private float radius;
 	
 	private float knockbackX;
 	private float knockbackY;
@@ -186,7 +194,7 @@ public class Player {
 		graphics2.setPaint(color);
 		graphics2.fillPolygon(xs2, ys2, 3);
 		
-		
+		radius = testh/2;
 		/* FOR WHEN AN IMAGE IS DRAWN
 		try{
 			image = ImageIO.read(new File(p1ImageFilename));
@@ -248,7 +256,7 @@ public class Player {
 	}
 	
 	public int[] getCooldowns(){
-		return new int[] {ability1.cooldown, ability2.cooldown};
+		return new int[] {ability1.getCooldown(), ability2.getCooldown()};
 	}
 	
 	public HashMap<String, Integer> getKeys(){
@@ -459,12 +467,44 @@ public class Player {
 	
 	// Check for collision with the boundary box in this frame
 	public float checkBoundaryCollisions(float time){
-		Physics.checkBoxCollision(xpos, ypos, xvol, yvol, getEdges().width/2, getEdges().height/2, 0, 0, Settings.getDimx(), Settings.getDimy(), time, tempCollision);
+		Physics.checkBoxCollision(xpos, ypos, xvol+knockbackX, yvol+knockbackY, getEdges().width/2, getEdges().height/2, 0, 0, Settings.getDimx(), Settings.getDimy(), time, tempCollision);
 		if(tempCollision.t < earliestCollision.t){
 			earliestCollision.copy(tempCollision);
 			return tempCollision.t;
 		}
 		return time;
+	}
+	
+	public float checkObstacleCollision(float time, Obstacle o){
+		float earliestTime = time;
+		boolean insideY =  ypos < o.ypoints[1] + radius && ypos > o.ypoints[0] - radius;
+		boolean insideX =  xpos < o.xpoints[1] + radius && xpos > o.xpoints[0] - radius;
+		if(insideY){
+			Physics.checkVerticalLine(xpos, xvol+knockbackX, yvol+knockbackY, radius, o.xpoints[0], time, tempCollision);
+			if(tempCollision.t < earliestCollision.t){
+				earliestCollision.copy(tempCollision);
+				earliestTime = tempCollision.t;
+			}
+			Physics.checkVerticalLine(xpos, xvol+knockbackX, yvol+knockbackY, radius, o.xpoints[1], time, tempCollision);
+			if(tempCollision.t < earliestCollision.t){
+				earliestCollision.copy(tempCollision);
+				earliestTime = tempCollision.t;
+			}
+		}
+		if(insideX){
+			Physics.checkHorizontalLine(ypos, xvol+knockbackX, yvol+knockbackY, radius, o.ypoints[0], time, tempCollision);
+			if(tempCollision.t < earliestCollision.t){
+				earliestCollision.copy(tempCollision);
+				earliestTime = tempCollision.t;
+			}
+			Physics.checkHorizontalLine(ypos, xvol+knockbackX, yvol+knockbackY, radius, o.ypoints[1], time, tempCollision);
+			if(tempCollision.t < earliestCollision.t){
+				earliestCollision.copy(tempCollision);
+				earliestTime = tempCollision.t;
+			}
+		}
+
+		return earliestTime;
 	}
 	
 	// check if player collides with a bullet
@@ -588,8 +628,8 @@ public class Player {
 	
 	// dissolve total velocity along x and y axes
 	public void updateVolComponents(){
-		xvol = velocity*(float)Math.sin(angle);
-		yvol = -velocity*(float)Math.cos(angle);
+		xvol = Physics.xComponent(velocity, angle);
+		yvol = Physics.yComponent(velocity, angle);
 	}
 	
 	// update state based on keypresses
@@ -721,15 +761,22 @@ public class Player {
 	public void move(float time){
 		// if collision in time step, update accordingly
 		if(earliestCollision.t <= time){
-			xpos = earliestCollision.getNewX(xpos, xvol);
-			ypos = earliestCollision.getNewY(ypos, yvol);
-			xvol = earliestCollision.nspeedx;
-			yvol = earliestCollision.nspeedy;
+			xpos = earliestCollision.getNewX(xpos, xvol+knockbackX);
+			ypos = earliestCollision.getNewY(ypos, yvol+knockbackY);
+			if(earliestCollision.xcollide){
+				xvol = 0;
+				knockbackX = 0;
+			}
+			if(earliestCollision.ycollide){
+				yvol = 0;
+				knockbackY = 0;
+			}
+
 		}
 		// otherwise update location
 		else{
-			xpos += xvol*time + knockbackX*time;
-			ypos += yvol*time + knockbackY*time;
+			xpos += (xvol + knockbackX)*time;
+			ypos += (yvol + knockbackY)*time;
 		}
 		
 		// update all bullets locations as well

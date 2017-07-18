@@ -143,6 +143,38 @@ public abstract class Projectile {
 		return time;
 	}
 	
+	public float checkObstacleCollision(float time, Obstacle o){
+		float earliestTime = time;
+		boolean insideY =  ypos < o.ypoints[1] + 1 && ypos > o.ypoints[0] - 1;
+		boolean insideX =  xpos < o.xpoints[1] + 1 && xpos > o.xpoints[0] - 1;
+		if(insideY){
+			Physics.checkVerticalLine(xpos, xvol, yvol, 1, o.xpoints[0], time, tempCollision);
+			if(tempCollision.t < earliestCollision.t){
+				earliestCollision.copy(tempCollision);
+				earliestTime = tempCollision.t;
+			}
+			Physics.checkVerticalLine(xpos, xvol, yvol, 1, o.xpoints[1], time, tempCollision);
+			if(tempCollision.t < earliestCollision.t){
+				earliestCollision.copy(tempCollision);
+				earliestTime = tempCollision.t;
+			}
+		}
+		if(insideX){
+			Physics.checkHorizontalLine(ypos, xvol, yvol, 1, o.ypoints[0], time, tempCollision);
+			if(tempCollision.t < earliestCollision.t){
+				earliestCollision.copy(tempCollision);
+				earliestTime = tempCollision.t;
+			}
+			Physics.checkHorizontalLine(ypos, xvol, yvol, 1, o.ypoints[1], time, tempCollision);
+			if(tempCollision.t < earliestCollision.t){
+				earliestCollision.copy(tempCollision);
+				earliestTime = tempCollision.t;
+			}
+		}
+
+		return earliestTime;
+	}
+	
 	// checks if projectile has hit the player
 	public boolean checkHit(Player p){
 		return p.getBounds().intersects(getBounds());

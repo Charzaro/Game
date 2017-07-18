@@ -43,12 +43,16 @@ public class Hitscan extends Projectile {
 		for(int i=0; i<p.npoints; i++){
 			if(i == p.npoints - 1){
 				if(hitLine.intersectsLine(p.xpoints[i], p.ypoints[i], p.xpoints[0], p.ypoints[0])){
-					hit = true;
+					if(!Settings.map.lineOfSightCheck(xpos, ypos, player.getX(), player.getY())){
+						hit = true;
+					}
 				}
 			}
 			else{
 				if(hitLine.intersectsLine(p.xpoints[i], p.ypoints[i], p.xpoints[i+1], p.ypoints[i+1])){
-					hit = true;
+					if(!Settings.map.lineOfSightCheck(xpos, ypos, player.getX(), player.getY())){
+						hit = true;
+					}
 				}
 			}
 		}
