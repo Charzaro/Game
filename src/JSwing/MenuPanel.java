@@ -40,7 +40,7 @@ public class MenuPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	
 	private static final int BUTTON_GAP = 40;
-	private static final int NUM_ABILITIES = 5;
+	private static final int NUM_ABILITIES = 6;
 	
 	private static final String P1COLOR = "#e8a961";
 	private static final String P2COLOR = "#ad84f9";
@@ -50,6 +50,7 @@ public class MenuPanel extends JPanel {
 	private static final short SNIPE = 2;
 	private static final short DASH = 3;
 	private static final short REFLECT = 4;
+	private static final short PUSH = 5;
 
 	private int width, height;
 	
@@ -408,12 +409,21 @@ public class MenuPanel extends JPanel {
 			}
 		};
 		
+		AbilityButton pushButton1 = new AbilityButton("Push"){
+			@Override
+			public void mouseReleased(MouseEvent e){
+				p1Abil1Chosen = PUSH;
+				abilityClick(true, true, PUSH);
+			}
+		};
+		
 		p1Ability1Array = new AbilityButton[NUM_ABILITIES];
 		p1Ability1Array[BURST] = burstButton1;
 		p1Ability1Array[HOME] = homingButton1;
 		p1Ability1Array[SNIPE] = sniperButton1;
 		p1Ability1Array[DASH] = dashButton1;
 		p1Ability1Array[REFLECT] = reflectButton1;
+		p1Ability1Array[PUSH] = pushButton1;
 		
 		
 		// P1 ability 2
@@ -458,12 +468,21 @@ public class MenuPanel extends JPanel {
 			}
 		};
 		
+		AbilityButton pushButton2 = new AbilityButton("Push"){
+			@Override
+			public void mouseReleased(MouseEvent e){
+				p1Abil2Chosen = PUSH;
+				abilityClick(true, false, PUSH);
+			}
+		};
+		
 		p1Ability2Array = new AbilityButton[NUM_ABILITIES];
 		p1Ability2Array[BURST] = burstButton2;
 		p1Ability2Array[HOME] = homingButton2;
 		p1Ability2Array[SNIPE] = sniperButton2;
 		p1Ability2Array[DASH] = dashButton2;
 		p1Ability2Array[REFLECT] = reflectButton2;
+		p1Ability2Array[PUSH] = pushButton2;
 		
 		// P2 ability 1
 		AbilityButton burstButton3 = new AbilityButton("Burst Attack"){
@@ -504,6 +523,14 @@ public class MenuPanel extends JPanel {
 				abilityClick(false, true, REFLECT);
 			}
 		};
+		
+		AbilityButton pushButton3 = new AbilityButton("Push"){
+			@Override
+			public void mouseReleased(MouseEvent e){
+				p2Abil1Chosen = PUSH;
+				abilityClick(false, true, PUSH);
+			}
+		};
 
 		p2Ability1Array = new AbilityButton[NUM_ABILITIES];
 		p2Ability1Array[BURST] = burstButton3;
@@ -511,6 +538,7 @@ public class MenuPanel extends JPanel {
 		p2Ability1Array[SNIPE] = sniperButton3;
 		p2Ability1Array[DASH] = dashButton3;
 		p2Ability1Array[REFLECT] = reflectButton3;
+		p2Ability1Array[PUSH] = pushButton3;
 		
 		// P2 ability 2
 
@@ -554,12 +582,21 @@ public class MenuPanel extends JPanel {
 			}
 		};
 		
+		AbilityButton pushButton4 = new AbilityButton("Push"){
+			@Override
+			public void mouseReleased(MouseEvent e){
+				p2Abil2Chosen = PUSH;
+				abilityClick(false, false, PUSH);
+			}
+		};
+		
 		p2Ability2Array = new AbilityButton[NUM_ABILITIES];
 		p2Ability2Array[BURST] = burstButton4;
 		p2Ability2Array[HOME] = homingButton4;
 		p2Ability2Array[SNIPE] = sniperButton4;
 		p2Ability2Array[DASH] = dashButton4;
 		p2Ability2Array[REFLECT] = reflectButton4;
+		p2Ability2Array[PUSH] = pushButton4;
 		
 		// Labels
 		JLabel p1Label = new JLabel("Player 1");
@@ -596,7 +633,7 @@ public class MenuPanel extends JPanel {
 		
 		JPanel p1Abil1 = new JPanel();
 		p1Abil1.setBackground(Color.decode(P1COLOR));
-		p1Abil1.setLayout(new GridLayout(6, 0));
+		p1Abil1.setLayout(new GridLayout(NUM_ABILITIES+1, 0));
 		//p1Abil1.setPreferredSize(new Dimension(width/6, height/2));
 		p1Abil1.add(p1Abil1Label);
 		p1Abil1.add(burstButton1);
@@ -604,11 +641,12 @@ public class MenuPanel extends JPanel {
 		p1Abil1.add(sniperButton1);
 		p1Abil1.add(dashButton1);
 		p1Abil1.add(reflectButton1);
+		p1Abil1.add(pushButton1);
 		selectionPanel.add(p1Abil1);
 		
 		JPanel p1Abil2 = new JPanel();
 		p1Abil2.setBackground(Color.decode(P1COLOR));
-		p1Abil2.setLayout(new GridLayout(6, 0));
+		p1Abil2.setLayout(new GridLayout(NUM_ABILITIES+1, 0));
 		//p1Abil1.setPreferredSize(new Dimension(width/4, height/2));
 		p1Abil2.add(p1Abil2Label);
 		p1Abil2.add(burstButton2);
@@ -616,6 +654,7 @@ public class MenuPanel extends JPanel {
 		p1Abil2.add(sniperButton2);
 		p1Abil2.add(dashButton2);
 		p1Abil2.add(reflectButton2);
+		p1Abil2.add(pushButton2);
 		selectionPanel.add(p1Abil2);
 		
 		// Player 2
@@ -623,7 +662,7 @@ public class MenuPanel extends JPanel {
 		
 		JPanel p2Abil1 = new JPanel();
 		p2Abil1.setBackground(Color.decode(P2COLOR));
-		p2Abil1.setLayout(new GridLayout(6, 0));
+		p2Abil1.setLayout(new GridLayout(NUM_ABILITIES+1, 0));
 		//p2Abil1.setPreferredSize(new Dimension(width/4, height/2));
 		p2Abil1.add(p2Abil1Label);
 		p2Abil1.add(burstButton3);
@@ -631,11 +670,12 @@ public class MenuPanel extends JPanel {
 		p2Abil1.add(sniperButton3);
 		p2Abil1.add(dashButton3);
 		p2Abil1.add(reflectButton3);
+		p2Abil1.add(pushButton3);
 		selectionPanel.add(p2Abil1);
 		
 		JPanel p2Abil2 = new JPanel();
 		p2Abil2.setBackground(Color.decode(P2COLOR));
-		p2Abil2.setLayout(new GridLayout(6, 0));
+		p2Abil2.setLayout(new GridLayout(NUM_ABILITIES+1, 0));
 		//p1Abil1.setPreferredSize(new Dimension(width/4, height/2));
 		p2Abil2.add(p2Abil2Label);
 		p2Abil2.add(burstButton4);
@@ -643,6 +683,7 @@ public class MenuPanel extends JPanel {
 		p2Abil2.add(sniperButton4);
 		p2Abil2.add(dashButton4);
 		p2Abil2.add(reflectButton4);
+		p2Abil2.add(pushButton4);
 		selectionPanel.add(p2Abil2);
 		
 		//selectionPanel.setOpaque(false);

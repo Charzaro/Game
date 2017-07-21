@@ -145,6 +145,12 @@ public abstract class Projectile {
 	
 	public float checkObstacleCollision(float time, Obstacle o){
 		float earliestTime = time;
+		if(o.health <= 0){
+			return time;
+		}
+		if(o.breakable && this.getBounds().intersects(o.getRect())){
+			o.health -= getDamage();
+		}
 		boolean insideY =  ypos < o.ypoints[1] + 1 && ypos > o.ypoints[0] - 1;
 		boolean insideX =  xpos < o.xpoints[1] + 1 && xpos > o.xpoints[0] - 1;
 		if(insideY){

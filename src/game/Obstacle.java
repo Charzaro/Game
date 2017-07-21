@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.Line2D;
+import java.awt.geom.Point2D;
 
 public class Obstacle{
 	
@@ -13,17 +14,32 @@ public class Obstacle{
 	
 	public float width;
 	public float height;
+	
+	public int health;
+	public boolean breakable;
 
-	public Obstacle(float x, float y, float width, float height) {
+	public Obstacle(float x, float y, float width, float height, boolean breakable) {
 		xpoints = new float[] {x, x+width};
 		ypoints = new float[] {y, y+height};
+		
+		this.breakable = breakable;
+		health = 10;
 		
 		this.width = width;
 		this.height = height;
 	}
 	
 	public void draw(Graphics2D g2){
-		g2.setPaint(Color.GRAY);
+		if(health <= 0){
+			return;
+		}
+		if(breakable){
+			g2.setPaint(Color.LIGHT_GRAY);
+		}
+		else{
+			g2.setPaint(Color.GRAY);
+		}
+		
 		g2.fillRect((int)xpoints[0], (int)ypoints[0], (int)width, (int)height);
 	}
 	

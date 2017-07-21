@@ -17,7 +17,7 @@ import animation.Star;
  */
 public class Background {	
 	// size of the star array
-	private final static int MAXNUMSTARS = 800;
+	private final static int MAXNUMSTARS = 400;
 	
 	private final static int GAP = 20;
 
@@ -39,6 +39,7 @@ public class Background {
 		graphics.fillRect(0, 0, Settings.getDimx(), Settings.getDimy());
 		
 		stars = new Animation[MAXNUMSTARS];
+		addStars();
 	}
 
 
@@ -196,33 +197,37 @@ public class Background {
 
 	}
 	
-	public void startStars(){
-		for(int i=0; i<Settings.getDimy(); i++){
-			addStars(i);
-		}
-	}
-	
 	// adds a star animation to the background at the top of the screen
-	private void addStars(int y){
-		int frequency = 3;
-		int max_size = 4;
-		int min_size = 1;
-		int numNewStars = (int)(Math.random()*frequency); // 0 to 3, the number of new stars to add this frame
-		for(int i=0; i<numNewStars; i++){
+	private void addStars(){
+		
+		for(int i=0; i<MAXNUMSTARS; i++){
 			int x = (int)(Math.random()*Settings.getDimx()); // random location across the top of the screen
-			double randNum = Math.random(); // random number 0 to 1, when squared still gives 0 to 1 but smaller numbers more likely
-			float r = (float)(randNum*randNum*(max_size - min_size)+min_size); // creates a random size from 1 to 4 skewed towards a lower size
+			int y = (int)(Math.random()*Settings.getDimy()); // random location across the top of the screen
+			double randNum = Math.random()*10; // random number 0 to 1, when squared still gives 0 to 1 but smaller numbers more likely
+			float r;
+			if(randNum < 4){
+				r = 1;
+			}
+			else if(randNum < 7){
+				r = 2;
+			}
+			else if(randNum < 9){
+				r = 3;
+			}
+			else{
+				r = 4;
+			}
 			
 			// adds a star animation to the first empty spot in the array, or the first spot with a star animation that has finished
 			Animation s = new Star(x, y, r, Color.WHITE);
 			for(int j=0; j<stars.length; j++){
 				if(stars[j] == null){
 					stars[j] = s;
-					return;
+					break;
 				}
 				else if(!stars[j].active){
 					stars[j] = s;
-					return;
+					break;
 				}
 			}
 			// if all spots are filled with stars in use, print an error
@@ -237,7 +242,7 @@ public class Background {
 
 	// updates each frame, adding starts and moving stars
 	public void update(){
-		addStars(0);
+		//addStars(0);
 	}
 	
 	public void move(){

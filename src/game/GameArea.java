@@ -22,7 +22,6 @@ import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 
 import JSwing.MainFrame;
-import JSwing.ReadWriter;
 import animation.Animation;
 import animation.HitscanAnimation;
 
@@ -84,12 +83,12 @@ public class GameArea extends JPanel {
 		// tell the players and bullets what dimensions to use
 		Settings.setDim(width, height);
 		
-		// initiate players at opposite ends of the screen
-		p1 = new Player(40, height/2, 1, this);
-		p2 = new Player(width-40, height/2, 2, this);
-		
 		// Load the map
-		map = new Map("BasicMap");
+		map = new Map("MiddleWall");
+		
+		// initiate players at opposite ends of the screen
+		p1 = new Player(map.spawn1.x, map.spawn1.y, map.spawn1.angle, 1, this);
+		p2 = new Player(map.spawn2.x, map.spawn2.y, map.spawn2.angle, 2, this);
 		
 		//obstacles = new Obstacle[0];
 		// set up background and UI elements
@@ -121,7 +120,6 @@ public class GameArea extends JPanel {
 		setKeyBindings();
 		
 		// start with game unpaused
-		bg.startStars();
 		isPaused = true;
 		play();
 	}
@@ -166,8 +164,8 @@ public class GameArea extends JPanel {
 	
 	// restarts game from starting state
 	public void resetGame(){
-		p1.reset(40, height/2);
-		p2.reset(width-40, height/2);
+		p1.reset(map.spawn1.x, map.spawn1.y, map.spawn1.angle);
+		p2.reset(map.spawn2.x, map.spawn2.y, map.spawn2.angle);
 	}
 	
 	// start time

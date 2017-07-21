@@ -43,7 +43,7 @@ public class DashAttack extends Ability {
 					// re-enable vulnerability, steering, and set velocity to 0
 					player.setInvuln(false);
 					player.setSteering(true);
-					player.setVelocity(0);
+					player.setVelocity(Player.MAX_VELOCITY);
 					active = false;
 				}
 			};
