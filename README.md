@@ -2,6 +2,8 @@
 
 A simple two person game played on one keyboard.
 
+Press escape to go to the menu.
+
 The goal is to shoot the opposing player's ship until they run out of health before you run out of health.
 Each player has a primary fire, a speed boost, and two sub attacks. The key binds for each the controls
 as well as which sub attacks the player is using can be customized in the main menu.
